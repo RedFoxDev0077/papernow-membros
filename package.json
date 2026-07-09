@@ -1,0 +1,27 @@
+{
+  "name": "papernow-membros",
+  "version": "1.0.0",
+  "description": "Área de Membros exclusiva Papernow — Master Planner 2027 (Fase 1, PWA)",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "seed": "node server/seed.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.2.0",
+    "sharp": "^0.33.5"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}

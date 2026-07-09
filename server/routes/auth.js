@@ -74,7 +74,7 @@ router.post('/register', authLimiter, async (req, res) => {
     .run(email, cpf || buyer.cpf || null, name || null, password_hash);
   const user = db.prepare('SELECT id, email, name FROM users WHERE id = ?').get(info.lastInsertRowid);
 
-  issueSession(res, user);
+  issueSession(req, res, user);
   res.status(201).json({ user });
 });
 
@@ -86,7 +86,7 @@ router.post('/login', authLimiter, async (req, res) => {
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
   }
-  issueSession(res, user);
+  issueSession(req, res, user);
   res.json({ user: { id: user.id, email: user.email, name: user.name } });
 });
 

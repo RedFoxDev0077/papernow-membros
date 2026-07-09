@@ -1,9 +1,9 @@
 import jwt from 'jsonwebtoken';
-import { config, isProd } from './config.js';
+import { config } from './config.js';
 
 const COOKIE = 'pn_session';
 
-export function issueSession(res, user) {
+export function issueSession(req, res, user) {
   const token = jwt.sign(
     { uid: user.id, email: user.email, name: user.name || null },
     config.jwtSecret,
@@ -12,7 +12,9 @@ export function issueSession(res, user) {
   res.cookie(COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: isProd,
+    // Secure segue o protocolo real da requisição (via X-Forwarded-Proto do nginx):
+    // desligado no preview http, ligado automaticamente quando o HTTPS estiver ativo.
+    secure: req.secure,
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 }

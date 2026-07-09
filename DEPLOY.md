@@ -21,9 +21,9 @@ Tipo: A   Nome: areamembros   Valor: <IP_DA_VPS>   TTL: 3600
 ```bash
 ssh root@179.197.66.244            # troque para acesso por chave depois
 
-# Node 20 LTS + ferramentas
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt-get install -y nodejs git nginx ufw
+# Node 24 LTS + ferramentas (o app usa node:sqlite, que exige Node >= 23.4)
+curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
+apt-get install -y nodejs git nginx ufw curl
 
 # Firewall
 ufw allow OpenSSH && ufw allow 'Nginx Full' && ufw --force enable
@@ -122,11 +122,11 @@ tar czf backup-$(date +%F).tgz -C /home/papernow/app data
 
 ## 8. Atualizações (novas versões)
 
+Com o CI/CD configurado (seção 11), **cada push na branch `main` publica sozinho**.
+Para publicar manualmente no servidor, use o mesmo script do pipeline:
+
 ```bash
-su - papernow && cd app
-git pull
-npm ci --omit=dev
-sudo systemctl restart papernow
+sudo -u papernow bash /home/papernow/app/scripts/deploy.sh
 ```
 
 ## 9. Integração Nuvemshop (Semana 1)
@@ -145,3 +145,55 @@ curl -X POST https://areamembros.papernow.com.br/api/access/buyers \
   -H "x-admin-token: <ADMIN_TOKEN>" -H "Content-Type: application/json" \
   -d '{"buyers":[{"email":"cliente@email.com","cpf":"00000000000","order_ref":"NS-123"}]}'
 ```
+
+## 10. Provisionamento automatizado
+
+Os arquivos de infraestrutura ficam versionados em `deploy/` (systemd, nginx, sudoers)
+e o setup base é feito por um script. Depois de apontar o DNS (seção 1):
+
+```bash
+# no servidor, como root, após o primeiro clone do repositório:
+git clone git@github.com:RedFoxDev0077/papernow-membros.git /home/papernow/app
+sudo bash /home/papernow/app/scripts/provision-vps.sh
+```
+
+O script instala Node 24, nginx, firewall, cria o usuário `papernow`, instala o serviço
+systemd, a regra de sudoers e a config do nginx. Ao final, ele lista os passos manuais
+que restam (`.env`, `npm ci`, `certbot`).
+
+## 11. CI/CD — deploy automático a cada push
+
+O pipeline está em `.github/workflows/deploy.yml`:
+
+- **Job `test`** — a cada push/PR: instala dependências, checa a sintaxe de todos os
+  arquivos JS e faz um *smoke test* (sobe o servidor e valida `/api/health`).
+- **Job `deploy`** — só na branch `main` e só se o `test` passar: conecta na VPS por SSH
+  e roda `scripts/deploy.sh` (git reset --hard → `npm ci --omit=dev` → restart → health check).
+  Enquanto os *secrets* não estiverem configurados, o deploy é **ignorado** (não quebra o build).
+
+### Secrets do repositório (GitHub → Settings → Secrets and variables → Actions)
+
+| Secret | Valor |
+|---|---|
+| `VPS_HOST` | IP da VPS (ex.: `179.197.66.244`) |
+| `VPS_USER` | `papernow` |
+| `VPS_PORT` | `22` |
+| `VPS_SSH_KEY` | chave **privada** SSH cujo par público está no `authorized_keys` do usuário `papernow` |
+
+### Chave de deploy (uma vez)
+
+1. **Chave do CI → VPS** (para o Actions logar no servidor):
+   ```bash
+   ssh-keygen -t ed25519 -C "github-actions" -f ci_deploy -N ""
+   # cole o conteúdo de ci_deploy.pub em /home/papernow/.ssh/authorized_keys (no servidor)
+   # cole o conteúdo de ci_deploy (privado) no secret VPS_SSH_KEY
+   ```
+2. **Deploy key da VPS → GitHub** (para o servidor conseguir dar `git fetch` do repo privado):
+   ```bash
+   sudo -u papernow ssh-keygen -t ed25519 -f /home/papernow/.ssh/id_ed25519 -N ""
+   sudo -u papernow cat /home/papernow/.ssh/id_ed25519.pub
+   # adicione essa chave em: repo GitHub → Settings → Deploy keys → Add deploy key (read-only)
+   ```
+
+Depois disso, todo `git push` na `main` publica na VPS automaticamente. Acompanhe em
+**GitHub → Actions**.

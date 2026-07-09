@@ -10,7 +10,7 @@
     "seed": "node server/seed.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=23.4.0"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

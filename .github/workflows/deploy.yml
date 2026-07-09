@@ -52,6 +52,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
+      - uses: actions/checkout@v4
+
       - name: Check deploy secrets
         id: check
         env:
@@ -64,14 +66,39 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Deploy over SSH
+      # Push model: the runner copies the code to the VPS over SSH.
+      # The VPS never authenticates to GitHub, so no deploy key is needed —
+      # only the VPS_* secrets below.
+      - name: Set up SSH key
         if: steps.check.outputs.ready == 'true'
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script_stop: true
-          script: |
-            bash /home/papernow/app/scripts/deploy.sh
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ci
+          chmod 600 ~/.ssh/id_ci
+          ssh-keyscan -p "${VPS_PORT:-22}" "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Sync files to VPS
+        if: steps.check.outputs.ready == 'true'
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          rsync -az --delete \
+            --exclude '.git' --exclude 'node_modules' --exclude 'data' --exclude '.env' \
+            -e "ssh -i ~/.ssh/id_ci -p ${VPS_PORT:-22} -o StrictHostKeyChecking=yes" \
+            ./ "${VPS_USER}@${VPS_HOST}:/home/papernow/app/"
+
+      - name: Install deps, restart and health check
+        if: steps.check.outputs.ready == 'true'
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          ssh -i ~/.ssh/id_ci -p "${VPS_PORT:-22}" "${VPS_USER}@${VPS_HOST}" \
+            'bash /home/papernow/app/scripts/deploy.sh'

@@ -1,17 +1,12 @@
 #!/usr/bin/env bash
-# Deploy da área de membros na VPS. Idempotente e seguro para re-executar.
-# Chamado pelo GitHub Actions (via SSH) ou manualmente no servidor.
+# Ativa a versão já sincronizada em APP_DIR: instala dependências, reinicia o
+# serviço e valida a saúde. Chamado pelo GitHub Actions (após o rsync) ou à mão.
 set -euo pipefail
 
 APP_DIR="${APP_DIR:-/home/papernow/app}"
-BRANCH="${DEPLOY_BRANCH:-main}"
 HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:3000/api/health}"
 
 cd "$APP_DIR"
-
-echo "==> Buscando a versão mais recente (origin/$BRANCH)"
-git fetch --prune origin
-git reset --hard "origin/$BRANCH"
 
 echo "==> Instalando dependências de produção"
 npm ci --omit=dev

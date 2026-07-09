@@ -1,0 +1,3 @@
+# Permite que o usuário de deploy reinicie o serviço sem senha.
+# Instale em /etc/sudoers.d/papernow (modo 0440) e valide com: visudo -cf
+papernow ALL=(root) NOPASSWD: /usr/bin/systemctl restart papernow, /usr/bin/systemctl start papernow, /usr/bin/systemctl stop papernow, /usr/bin/systemctl status papernow

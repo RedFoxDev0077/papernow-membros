@@ -47,6 +47,20 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_photos_user_week ON photos(user_id, week);
 
+  CREATE TABLE IF NOT EXISTS content (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    section     TEXT NOT NULL DEFAULT 'papernow',  -- 'papernow' | 'marilia'
+    kind        TEXT NOT NULL DEFAULT 'pdf',        -- 'pdf' | 'video' | 'link'
+    title       TEXT NOT NULL,
+    description TEXT,
+    url         TEXT,                               -- para video/link
+    filename    TEXT,                               -- para pdf (arquivo na VPS)
+    badge       TEXT,                               -- ex.: "Mensal", "Novo"
+    position    INTEGER DEFAULT 0,
+    created_at  TEXT DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_content_section ON content(section, position, created_at);
+
   CREATE TABLE IF NOT EXISTS notes (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

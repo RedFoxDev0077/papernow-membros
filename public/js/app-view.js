@@ -5,7 +5,8 @@ import { dashboardView } from './views/dashboard.js';
 import { calendarView, weekDetailView } from './views/calendar.js';
 import { notesView } from './views/notes.js';
 import { profileView } from './views/profile.js';
-import { soonView } from './views/soon.js';
+import { contentView } from './views/content.js';
+import { retrospectivaView } from './views/retrospectiva.js';
 
 const NAV = [
   { id: 'inicio', label: 'Início', icon: 'home' },
@@ -13,9 +14,9 @@ const NAV = [
   { id: 'calendario', label: 'Calendário', icon: 'calendar' },
   { id: 'foto', label: 'Enviar foto da semana', icon: 'camera' },
   { id: 'anotacoes', label: 'Anotações', icon: 'note' },
-  { id: 'habitos', label: 'Hábitos', icon: 'habits' },
   { id: 'biblioteca', label: 'Biblioteca', icon: 'book' },
-  { id: 'conteudo', label: 'Conteúdo exclusivo', icon: 'heartcontent' },
+  { id: 'marilia', label: 'Marília Cordeiro', icon: 'heartcontent' },
+  { id: 'retrospectiva', label: 'Retrospectiva', icon: 'spark' },
   { id: 'perfil', label: 'Meu perfil', icon: 'user' },
 ];
 
@@ -100,9 +101,9 @@ export function renderApp(root, user, onLogout) {
         const w = await nav.currentWeek();
         return renderPage(() => weekDetailView(nav, w, page === 'foto'));
       }
-      case 'habitos': setActive('habitos'); return renderPage(() => soonView('habitos'));
-      case 'biblioteca': setActive('biblioteca'); return renderPage(() => soonView('biblioteca'));
-      case 'conteudo': setActive('conteudo'); return renderPage(() => soonView('conteudo'));
+      case 'biblioteca': setActive('biblioteca'); return renderPage(() => contentView('papernow'));
+      case 'marilia': setActive('marilia'); return renderPage(() => contentView('marilia'));
+      case 'retrospectiva': setActive('retrospectiva'); return renderPage(() => retrospectivaView(nav));
       default: setActive('inicio'); return renderPage(() => dashboardView(nav));
     }
   }

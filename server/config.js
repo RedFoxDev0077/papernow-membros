@@ -20,6 +20,7 @@ export const config = {
     root,
     data: path.join(root, 'data'),
     uploads: path.join(root, 'data', 'uploads'),
+    content: path.join(root, 'data', 'content'),
     db: path.join(root, 'data', 'papernow.db'),
     public: path.join(root, 'public'),
   },

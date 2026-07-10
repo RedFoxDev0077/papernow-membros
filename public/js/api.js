@@ -47,4 +47,6 @@ export const api = {
   toggleNoteDone: (id, done) => request('PATCH', `/api/notes/${id}/done`, { done }),
   deleteNote: (id) => request('DELETE', `/api/notes/${id}`),
   setMotto: (motto) => request('PUT', '/api/dashboard/motto', { motto }),
+  content: (section) => request('GET', `/api/content?section=${section}`),
+  retrospectiva: () => request('GET', '/api/retrospectiva'),
 };

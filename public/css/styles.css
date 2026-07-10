@@ -349,6 +349,36 @@ img { max-width: 100%; }
 .swatch.sel { border-color: var(--ink); box-shadow: 0 0 0 2px var(--white) inset; }
 .swatch.none { background: var(--white); border: 1.5px dashed var(--line); color: var(--ink-faint); font-size: 13px; }
 
+/* ===== Content (Biblioteca / Marília) ===== */
+.content-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.content-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+.content-info { padding: 16px; }
+.content-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.content-head h3 { font-size: 17px; }
+.content-badge { font-size: 10.5px; background: var(--terra); color: #fff; border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+.content-info p { font-size: 13.5px; color: var(--ink-soft); margin: 6px 0 12px; }
+.content-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.content-actions .btn { text-decoration: none; }
+.video-embed { position: relative; padding-top: 56.25%; background: #eee4d2; }
+.video-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+/* ===== Retrospectiva ===== */
+.retro-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+.retro-stat { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 18px; text-align: center; box-shadow: var(--shadow-sm); }
+.retro-stat .ic { display: inline-flex; color: var(--terra); margin-bottom: 6px; }
+.retro-stat .n { font-size: 30px; color: var(--ink); line-height: 1; }
+.retro-stat .l { font-size: 12.5px; color: var(--ink-soft); margin-top: 6px; }
+.retro-mosaic { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-bottom: 22px; }
+.retro-mosaic img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+.retro-notes { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-bottom: 24px; }
+.retro-note { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px 16px; }
+.retro-note h4 { margin: 0 0 4px; font-size: 15px; }
+.retro-note p { margin: 0 0 8px; font-size: 13.5px; color: var(--ink-soft); }
+.retro-note .m { font-size: 12px; color: var(--ink-faint); }
+.retro-foot { text-align: center; padding: 24px 0 8px; color: var(--ink-soft); }
+.retro-foot p { margin: 8px 0 0; font-family: var(--display); font-size: 17px; }
+@media (max-width: 560px) { .retro-stats { grid-template-columns: 1fr; } }
+
 /* ===== Quote edit ===== */
 .quote { position: relative; }
 .quote-edit { position: absolute; top: 14px; right: 14px; background: none; border: none; color: var(--ink-faint); padding: 6px; border-radius: 8px; line-height: 0; }

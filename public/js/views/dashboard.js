@@ -6,9 +6,9 @@ const QA = [
   { id: 'semana', t: 'Semana atual', d: 'Ver sua semana', ic: 'week' },
   { id: 'foto', t: 'Enviar foto da semana', d: 'Registre sua jornada', ic: 'camera' },
   { id: 'anotacoes', t: 'Anotações', d: 'Diárias, semanais e livres', ic: 'note' },
-  { id: 'habitos', t: 'Hábitos', d: 'Acompanhe seus hábitos', ic: 'habits' },
   { id: 'biblioteca', t: 'Biblioteca', d: 'Materiais e conteúdos', ic: 'book' },
-  { id: 'conteudo', t: 'Conteúdo exclusivo', d: 'Para clientes Papernow', ic: 'heartcontent' },
+  { id: 'marilia', t: 'Marília Cordeiro', d: 'Workshop e ebook', ic: 'heartcontent' },
+  { id: 'retrospectiva', t: 'Retrospectiva', d: 'Sua jornada do ano', ic: 'spark' },
 ];
 
 function greeting(name) {

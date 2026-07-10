@@ -7,13 +7,20 @@ import { config } from '../config.js';
 const router = Router();
 router.use(requireAuth);
 
-// Frases inspiradoras (rotacionam por dia) — a "voz" da Papernow.
+// Frases inspiradoras — uma para cada mês do ano (a "voz" da Papernow).
 const QUOTES = [
-  'Um dia planejado cabe mais vida dentro.',
-  'Cada pequena ação de hoje é o que constrói o seu melhor ano.',
-  'Planeje menos para sobreviver. Planeje mais para viver.',
-  'O seu Master Planner vai muito além do papel.',
-  'Uma semana de cada vez, uma memória de cada vez.',
+  'Um novo ano é uma página em branco. Escreva com intenção.',        // Jan
+  'Constância é mais bonita que pressa.',                             // Fev
+  'Floresça no seu tempo — cada semana tem o seu propósito.',         // Mar
+  'Cada pequena ação de hoje constrói o seu melhor ano.',             // Abr
+  'Cuidar de você também é planejamento.',                            // Mai
+  'No meio do ano, respire: você já veio longe.',                     // Jun
+  'Um dia planejado cabe mais vida dentro.',                          // Jul
+  'Planeje menos para sobreviver. Planeje mais para viver.',          // Ago
+  'Recomeços não têm data certa — todo dia é um bom começo.',         // Set
+  'Colha o que plantou e semeie o que ainda sonha.',                  // Out
+  'Gratidão transforma o que temos em suficiente.',                   // Nov
+  'Feche o ano com carinho pela sua própria jornada.',                // Dez
 ];
 
 // GET /api/dashboard — resumo para a tela Início
@@ -49,7 +56,7 @@ router.get('/', (req, res) => {
   ];
   const progress = Math.round((steps.filter(Boolean).length / steps.length) * 100);
 
-  const quote = QUOTES[new Date().getUTCDate() % QUOTES.length];
+  const quote = QUOTES[new Date().getUTCMonth() % QUOTES.length];
 
   res.json({
     user: { name: req.user.name || null, email: req.user.email },

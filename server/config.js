@@ -10,8 +10,10 @@ export const config = {
   port: Number(process.env.PORT || 3000),
   jwtSecret: process.env.JWT_SECRET || 'dev-secret-change-me',
   plannerYear: Number(process.env.PLANNER_YEAR || 2027),
-  plannerStart: process.env.PLANNER_START || '2027-01-04',
-  maxPhotosPerWeek: Number(process.env.MAX_PHOTOS_PER_WEEK || 3),
+  // Vazio = calcula automaticamente (semana que contém 1º/jan; 52 ou 53 semanas,
+  // sem dias órfãos). Defina uma segunda-feira só se o planner físico usar outra âncora.
+  plannerStart: process.env.PLANNER_START || '',
+  maxPhotosPerWeek: Number(process.env.MAX_PHOTOS_PER_WEEK || 7),
   nuvemshopWebhookSecret: process.env.NUVEMSHOP_WEBHOOK_SECRET || '',
   adminToken: process.env.ADMIN_TOKEN || 'dev-admin-token',
   paths: {

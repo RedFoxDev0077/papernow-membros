@@ -9,25 +9,29 @@ export async function calendarView(nav) {
   const currentWeek = await nav.currentWeek();
   const byWeek = Object.fromEntries(cal.weeks.map((w) => [w.week, w]));
   let monthIndex = Math.max(0, cal.months.findIndex((m) => m.weeks.some((w) => w.week === currentWeek)));
+  let mode = 'grid'; // 'grid' | 'gallery'
 
   const wrap = h('div', {});
   wrap.append(h('div', { class: 'page-h' }, [
     h('h1', { class: 'display' }, `Calendário Papernow ${cal.year}`),
-    h('div', { class: 'sub' }, 'Suas 52 semanas, espelhando o seu planner físico. Toque numa semana para adicionar fotos e ver as anotações.'),
+    h('div', { class: 'sub' }, `Suas ${cal.weeks.length} semanas, espelhando o seu planner físico. Toque numa semana para adicionar fotos e ver as anotações.`),
   ]));
 
-  const nameEl = h('div', { class: 'm-name' });
-  const grid = h('div', { class: 'weeks-grid' });
-  const prev = h('button', { class: 'btn ghost sm' }); prev.innerHTML = icon('chevronL', 18) + ' Anterior';
-  const next = h('button', { class: 'btn ghost sm' }); next.innerHTML = 'Próximo ' + icon('chevronR', 18);
-  prev.onclick = () => { monthIndex = (monthIndex - 1 + cal.months.length) % cal.months.length; paint(); };
-  next.onclick = () => { monthIndex = (monthIndex + 1) % cal.months.length; paint(); };
+  const body = h('div', {});
+  wrap.append(body);
 
-  function paint() {
+  function render() { body.innerHTML = ''; body.append(mode === 'grid' ? gridView() : galleryView()); }
+
+  function gridView() {
     const month = cal.months[monthIndex];
-    nameEl.textContent = `${month.monthName} ${cal.year}`;
-    grid.innerHTML = '';
-    for (const mw of month.weeks) {
+    const prev = h('button', { class: 'btn ghost sm', disabled: monthIndex === 0 ? '' : false });
+    prev.innerHTML = icon('chevronL', 18) + ' Anterior';
+    prev.onclick = () => { if (monthIndex > 0) { monthIndex--; render(); } };
+    const next = h('button', { class: 'btn ghost sm', disabled: monthIndex === cal.months.length - 1 ? '' : false });
+    next.innerHTML = 'Próximo ' + icon('chevronR', 18);
+    next.onclick = () => { if (monthIndex < cal.months.length - 1) { monthIndex++; render(); } };
+
+    const grid = h('div', { class: 'weeks-grid' }, month.weeks.map((mw) => {
       const w = byWeek[mw.week];
       const card = h('button', { class: 'week-card' + (w.week === currentWeek ? ' now' : '') }, [
         h('div', { class: 'wn' }, ['Semana ', h('b', {}, String(w.week))]),
@@ -38,11 +42,58 @@ export async function calendarView(nav) {
         ]),
       ]);
       card.onclick = () => nav.openWeek(w.week);
-      grid.append(card);
-    }
+      return card;
+    }));
+
+    const galleryBtn = h('button', { class: 'btn ghost sm' });
+    galleryBtn.innerHTML = icon('camera', 16) + ' Ver fotos do mês';
+    galleryBtn.onclick = () => { mode = 'gallery'; render(); };
+
+    return h('div', {}, [
+      h('div', { class: 'month-nav' }, [prev, h('div', { class: 'm-name' }, `${month.monthName} ${cal.year}`), next]),
+      h('div', { style: 'display:flex;justify-content:flex-end;margin-bottom:12px' }, galleryBtn),
+      grid,
+    ]);
   }
-  paint();
-  wrap.append(h('div', { class: 'month-nav' }, [prev, nameEl, next]), grid);
+
+  function galleryView() {
+    const month = cal.months[monthIndex];
+    const weekNums = new Set(month.weeks.map((w) => w.week));
+    const container = h('div', {});
+    const back = h('button', { class: 'back-link' }); back.innerHTML = icon('chevronL', 16) + ' Voltar ao mês';
+    back.onclick = () => { mode = 'grid'; render(); };
+    container.append(back, h('div', { class: 'page-h' }, [
+      h('h1', { class: 'display' }, `Fotos de ${month.monthName}`),
+      h('div', { class: 'sub' }, 'Todas as fotos do mês, agrupadas por semana — um álbum da sua jornada.'),
+    ]));
+
+    const holder = h('div', {});
+    container.append(holder);
+    (async () => {
+      const { photos } = await api.photos();
+      const mine = photos.filter((p) => weekNums.has(p.week));
+      if (!mine.length) {
+        holder.append(h('div', { class: 'empty' }, [h('div', { class: 'big' }, '🌿'), h('p', {}, 'Ainda não há fotos neste mês. Elas vão aparecer aqui conforme você registrar suas semanas.')]));
+        return;
+      }
+      for (const w of month.weeks) {
+        const wp = mine.filter((p) => p.week === w.week);
+        if (!wp.length) continue;
+        holder.append(h('div', { class: 'section-title' }, `Semana ${w.week} · ${w.label}`));
+        const g = h('div', { class: 'photo-grid', style: 'grid-template-columns:repeat(auto-fill,minmax(110px,1fr))' },
+          wp.map((p) => {
+            const item = h('div', { class: 'photo-item' }, [h('img', { src: p.url, alt: `Semana ${p.week}`, loading: 'lazy' }), p.caption ? h('div', { class: 'cap' }, p.caption) : null]);
+            item.style.cursor = 'pointer';
+            item.onclick = () => nav.openWeek(p.week);
+            return item;
+          }));
+        holder.append(g);
+      }
+    })();
+    return container;
+  }
+
+  render();
   return wrap;
 }
 
@@ -59,9 +110,10 @@ export async function weekDetailView(nav, week, focusUpload = false) {
     h('div', { class: 'sub' }, `${w.monthName} · ${w.label}`),
   ]));
 
-  const fileInput = h('input', { type: 'file', accept: 'image/*', capture: 'environment', style: 'display:none' });
+  // Sem "capture": no celular abre a escolha entre CÂMERA e GALERIA.
+  const fileInput = h('input', { type: 'file', accept: 'image/*', style: 'display:none' });
   const uploader = h('div', { class: 'uploader' });
-  const upText = h('div', {}, 'Toque para fotografar ou escolher da galeria');
+  const upText = h('div', {}, 'Toque para escolher da galeria ou tirar uma foto');
   uploader.append(spanIcon('camera', 30), upText,
     h('div', { style: 'font-size:12px;margin-top:4px' }, `Até ${cal.maxPhotosPerWeek} fotos · a foto entra automaticamente na Semana ${week}`));
   uploader.onclick = () => fileInput.click();
@@ -77,7 +129,7 @@ export async function weekDetailView(nav, week, focusUpload = false) {
       toast(`Foto adicionada à semana ${week} ✨`);
       await refresh();
     } catch (e) { toast(e.message, true); }
-    finally { uploader.classList.remove('busy'); upText.textContent = 'Toque para fotografar ou escolher da galeria'; fileInput.value = ''; }
+    finally { uploader.classList.remove('busy'); upText.textContent = 'Toque para escolher da galeria ou tirar uma foto'; fileInput.value = ''; }
   };
 
   async function refresh() {

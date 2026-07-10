@@ -6,9 +6,15 @@ import { isValidWeek } from '../util.js';
 export async function notesView(nav) {
   const filter = { kind: '', q: '' };
   const wrap = h('div', {});
-  wrap.append(h('div', { class: 'page-h' }, [
-    h('h1', { class: 'display' }, 'Anotações'),
-    h('div', { class: 'sub' }, 'Registre pensamentos diários, resumos semanais ou notas livres — tudo pesquisável.'),
+  const newBtn = h('button', { class: 'btn sm' });
+  newBtn.innerHTML = icon('plus', 18) + ' Nova anotação';
+  newBtn.onclick = () => editor(null);
+  wrap.append(h('div', { class: 'page-h', style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap' }, [
+    h('div', {}, [
+      h('h1', { class: 'display' }, 'Anotações'),
+      h('div', { class: 'sub' }, 'Registre pensamentos diários, resumos semanais ou notas livres — tudo pesquisável.'),
+    ]),
+    newBtn,
   ]));
 
   const search = h('input', { type: 'search', placeholder: 'Buscar nas anotações…' });

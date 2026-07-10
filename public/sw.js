@@ -1,5 +1,5 @@
 // Service Worker — Papernow Área de Membros (PWA Fase 1)
-const CACHE = 'papernow-v3';
+const CACHE = 'papernow-v4';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -21,6 +21,7 @@ const APP_SHELL = [
   '/img/planner-scene.svg',
   '/img/botanical-sprig.svg',
   '/img/botanical-branch.svg',
+  '/img/papernow-logo.png',
   '/manifest.webmanifest',
   '/icons/icon-192.png',
 ];

@@ -9,10 +9,7 @@ export function renderAuth(root, onAuthed) {
   if (resetToken) mode = 'reset';
 
   function brand() {
-    return h('div', { class: 'auth-brand' }, [
-      h('div', { class: 'mark' }, '∞'),
-      h('div', { class: 'name' }, 'PAPERNOW'),
-    ]);
+    return h('img', { class: 'auth-logo', src: '/img/papernow-logo.png', alt: 'Papernow', width: '190' });
   }
   function msg() { return h('div', { class: 'form-msg', id: 'authMsg' }); }
   function setMsg(t, ok = false) {

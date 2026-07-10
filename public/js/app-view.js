@@ -25,7 +25,7 @@ export function renderApp(root, user, onLogout) {
 
   const navButtons = {};
   const sidebar = h('nav', { class: 'sidebar', id: 'sidebar' });
-  sidebar.append(h('div', { class: 'brand' }, [h('span', { class: 'mark' }, '∞'), h('span', { class: 'name' }, 'PAPERNOW')]));
+  sidebar.append(h('div', { class: 'brand' }, h('img', { class: 'brand-logo', src: '/img/papernow-logo.png', alt: 'Papernow' })));
   for (const item of NAV) {
     const b = h('button', { class: 'nav-item' }, [iconSpan(item.icon), item.label]);
     b.onclick = () => { go(item.id); closeDrawer(); };
@@ -45,7 +45,7 @@ export function renderApp(root, user, onLogout) {
   bell.innerHTML = icon('bell', 22);
   const topbar = h('div', { class: 'topbar' }, [
     menuBtn,
-    h('div', { class: 'brand' }, [h('span', { class: 'mark' }, '∞'), h('span', { class: 'name' }, 'PAPERNOW')]),
+    h('div', { class: 'brand' }, h('img', { class: 'brand-logo', src: '/img/papernow-logo.png', alt: 'Papernow' })),
     bell,
   ]);
 

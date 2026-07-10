@@ -37,6 +37,12 @@ router.get('/', requireAuth, (req, res) => {
   res.json({ section, items: rows.map(publicItem) });
 });
 
+// ---- Admin: listar todo o conteúdo (painel de gestão) ----
+router.get('/admin', requireAdmin, (req, res) => {
+  const rows = db.prepare('SELECT * FROM content ORDER BY section, position ASC, created_at DESC').all();
+  res.json({ items: rows.map((r) => ({ ...r, downloadUrl: r.filename ? `/api/content/${r.id}/file` : null })) });
+});
+
 // ---- Cliente: baixar/abrir um PDF exclusivo (autenticado) ----
 router.get('/:id/file', requireAuth, (req, res) => {
   const row = db.prepare('SELECT * FROM content WHERE id = ?').get(req.params.id);

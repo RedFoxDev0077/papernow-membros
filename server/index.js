@@ -47,6 +47,9 @@ app.use('/api/retrospectiva', retrospectivaRoutes);
 // Fotos das clientes (privadas por pasta de usuário; servidas com cache curto)
 app.use('/uploads', express.static(config.paths.uploads, { maxAge: '1h', index: false }));
 
+// Painel de gestão de conteúdo (Papernow)
+app.get('/admin', (req, res) => res.sendFile(path.join(config.paths.public, 'admin.html')));
+
 // Frontend PWA
 app.use(express.static(config.paths.public, { index: 'index.html' }));
 

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Papernow · Gestão de Conteúdo</title>
+<style>
+  :root{--bg:#f3ece0;--paper:#fbf7ef;--card:#fdfbf6;--ink:#4a3f35;--soft:#8a7d6d;--terra:#b0714a;--terra-d:#935b39;--line:#e7dcc8;--danger:#b1503f;--ok:#6f8560}
+  *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+  .wrap{max-width:760px;margin:0 auto;padding:24px 16px 80px}
+  .brand{display:flex;align-items:center;gap:10px;justify-content:center;margin:8px 0 22px}
+  .brand img{height:26px}
+  h1{font-family:Georgia,serif;font-size:24px;color:var(--terra-d);text-align:center;margin:0 0 4px}
+  .sub{text-align:center;color:var(--soft);font-size:14px;margin:0 0 24px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 6px 18px rgba(120,90,55,.06)}
+  label{display:block;font-size:13px;color:var(--soft);margin:12px 0 5px}
+  input,select,textarea{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:15px;font-family:inherit;color:var(--ink)}
+  textarea{resize:vertical}
+  .row{display:flex;gap:12px}.row>div{flex:1}
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:10px;padding:12px 18px;background:var(--terra);color:#fff;font-size:15px;font-weight:600}
+  button:hover{background:var(--terra-d)}
+  button.ghost{background:transparent;color:var(--terra-d);border:1px solid var(--line)}
+  button.sm{padding:7px 12px;font-size:13px}
+  button.del{background:var(--danger)}
+  .msg{font-size:13.5px;min-height:18px;margin:8px 0}
+  .msg.err{color:var(--danger)}.msg.ok{color:var(--ok)}
+  .item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #efe6d6}
+  .item:last-child{border-bottom:none}
+  .item .t{font-weight:600;font-size:14.5px}.item .m{font-size:12.5px;color:var(--soft)}
+  .tag{display:inline-block;font-size:11px;background:#f3ece0;border:1px solid var(--line);border-radius:20px;padding:2px 9px;color:var(--terra-d);margin-right:6px}
+  .hidden{display:none}
+  .toprow{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .empty{color:var(--soft);font-size:13.5px;text-align:center;padding:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><img src="/img/papernow-logo.png" alt="Papernow"></div>
+  <h1>Gestão de Conteúdo</h1>
+  <p class="sub">Adicione e organize os materiais da Biblioteca e da seção Marília Cordeiro.</p>
+
+  <!-- Login -->
+  <div id="login" class="card">
+    <label>Chave de acesso</label>
+    <input id="token" type="password" placeholder="cole a chave de acesso aqui" autocomplete="off">
+    <div class="msg err" id="loginMsg"></div>
+    <button id="enter">Entrar</button>
+  </div>
+
+  <!-- App -->
+  <div id="app" class="hidden">
+    <div class="card">
+      <div class="toprow"><b>Novo material</b><button class="ghost sm" id="logout">Sair</button></div>
+      <div class="row">
+        <div><label>Seção</label>
+          <select id="section"><option value="papernow">Biblioteca Papernow</option><option value="marilia">Marília Cordeiro</option></select>
+        </div>
+        <div><label>Tipo</label>
+          <select id="kind"><option value="pdf">PDF (upload)</option><option value="video">Vídeo (YouTube/Vimeo)</option><option value="link">Link/Material</option></select>
+        </div>
+      </div>
+      <label>Título</label><input id="title" placeholder="Ex.: Mesa posta de fim de ano">
+      <label>Descrição (opcional)</label><textarea id="description" rows="2" placeholder="Uma frase sobre o material"></textarea>
+      <div class="row">
+        <div><label>Etiqueta (opcional)</label><input id="badge" placeholder="Ex.: Mensal, Novo, Workshop"></div>
+      </div>
+      <div id="fUrl"><label>URL do vídeo/material</label><input id="url" placeholder="https://..."></div>
+      <div id="fFile" class="hidden"><label>Arquivo PDF</label><input id="file" type="file" accept="application/pdf"></div>
+      <div class="msg" id="addMsg"></div>
+      <button id="add">Adicionar material</button>
+    </div>
+
+    <div class="card">
+      <b>Materiais publicados</b>
+      <div id="list" style="margin-top:8px"><div class="empty">Carregando…</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let TOKEN = localStorage.getItem('pn_admin_token') || '';
+
+function show(app){ $('login').classList.toggle('hidden', app); $('app').classList.toggle('hidden', !app); }
+function headers(){ return { 'x-admin-token': TOKEN }; }
+
+async function checkToken(t){
+  const r = await fetch('/api/content/admin', { headers: { 'x-admin-token': t } });
+  return r.ok;
+}
+
+$('enter').onclick = async () => {
+  const t = $('token').value.trim();
+  if(!t) return;
+  if(await checkToken(t)){ TOKEN=t; localStorage.setItem('pn_admin_token',t); show(true); load(); }
+  else $('loginMsg').textContent = 'Chave inválida. Confira com o desenvolvedor.';
+};
+$('logout').onclick = () => { localStorage.removeItem('pn_admin_token'); TOKEN=''; show(false); };
+
+$('kind').onchange = () => {
+  const pdf = $('kind').value === 'pdf';
+  $('fFile').classList.toggle('hidden', !pdf);
+  $('fUrl').classList.toggle('hidden', pdf);
+};
+
+$('add').onclick = async () => {
+  const m = $('addMsg'); m.className='msg'; m.textContent='Enviando…';
+  const fd = new FormData();
+  fd.append('section', $('section').value);
+  fd.append('kind', $('kind').value);
+  fd.append('title', $('title').value);
+  fd.append('description', $('description').value);
+  fd.append('badge', $('badge').value);
+  if($('kind').value === 'pdf'){ if($('file').files[0]) fd.append('file', $('file').files[0]); }
+  else fd.append('url', $('url').value);
+  try{
+    const r = await fetch('/api/content', { method:'POST', headers: headers(), body: fd });
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.error || 'Erro ao adicionar.');
+    m.className='msg ok'; m.textContent='Material adicionado! ✨';
+    $('title').value=''; $('description').value=''; $('badge').value=''; $('url').value=''; if($('file')) $('file').value='';
+    load();
+  }catch(e){ m.className='msg err'; m.textContent=e.message; }
+};
+
+async function load(){
+  const r = await fetch('/api/content/admin', { headers: headers() });
+  if(!r.ok){ show(false); return; }
+  const { items } = await r.json();
+  const list = $('list');
+  if(!items.length){ list.innerHTML='<div class="empty">Nenhum material ainda.</div>'; return; }
+  const names = { papernow:'Biblioteca', marilia:'Marília' };
+  list.innerHTML='';
+  for(const it of items){
+    const row = document.createElement('div'); row.className='item';
+    const left = document.createElement('div');
+    left.innerHTML = '<div class="t">'+escapeHtml(it.title)+'</div><div class="m"><span class="tag">'+names[it.section]+'</span><span class="tag">'+it.kind.toUpperCase()+'</span>'+(it.badge?'<span class="tag">'+escapeHtml(it.badge)+'</span>':'')+'</div>';
+    const del = document.createElement('button'); del.className='del sm'; del.textContent='Excluir';
+    del.onclick = async () => { if(!confirm('Excluir "'+it.title+'"?')) return; await fetch('/api/content/'+it.id, {method:'DELETE', headers:headers()}); load(); };
+    row.append(left, del); list.append(row);
+  }
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+// auto-login if token stored
+(async () => { if(TOKEN && await checkToken(TOKEN)){ show(true); load(); } else show(false); })();
+</script>
+</body>
+</html>

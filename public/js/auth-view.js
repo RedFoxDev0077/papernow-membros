@@ -48,6 +48,7 @@ export function renderAuth(root, onAuthed) {
       h('div', { style: 'text-align:right;margin:-4px 0 10px' }, h('button', { class: 'linkbtn', onclick: () => go('forgot') }, 'Esqueci minha senha')),
       msg(), btn,
       h('div', { class: 'switch-row' }, ['Primeira vez aqui? ', h('button', { class: 'linkbtn', onclick: () => go('register') }, 'Criar conta')]),
+      privacyNote(),
       h('div', { class: 'auth-tag' }, 'Planeje menos para sobreviver. Planeje mais para viver.'),
     ];
   }
@@ -103,6 +104,11 @@ export function renderAuth(root, onAuthed) {
       h('div', { class: 'field' }, [h('label', {}, 'Nova senha'), p.wrap]), msg(), btn];
   }
 
+  function privacyNote() {
+    const box = h('div', { class: 'privacy-note' });
+    box.innerHTML = icon('lock', 15) + '<span>Este espaço é só seu. Suas fotos e anotações são privadas e ninguém mais tem acesso a elas.</span>';
+    return box;
+  }
   function span(html, cls) { const s = h('span', cls ? { class: cls } : {}); s.innerHTML = html; return s; }
   function view() { return ({ login: loginView, register: registerView, forgot: forgotView, reset: resetView }[mode])(); }
   function go(m) { mode = m; paint(); }

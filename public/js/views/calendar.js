@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { h, toast } from '../ui.js';
+import { h, toast, openLightbox } from '../ui.js';
 import { icon } from '../icons.js';
 
 function spanIcon(name, size = 20) { const s = h('span', {}); s.style.display = 'inline-flex'; s.innerHTML = icon(name, size); return s; }
@@ -82,10 +82,10 @@ export async function calendarView(nav) {
         holder.append(h('div', { class: 'section-title' }, `Semana ${w.week} · ${w.label}`));
         const g = h('div', { class: 'photo-grid', style: 'grid-template-columns:repeat(auto-fill,minmax(110px,1fr))' },
           wp.map((p) => {
-            const item = h('div', { class: 'photo-item' }, [h('img', { src: p.url, alt: `Semana ${p.week}`, loading: 'lazy' }), p.caption ? h('div', { class: 'cap' }, p.caption) : null]);
-            item.style.cursor = 'pointer';
-            item.onclick = () => nav.openWeek(p.week);
-            return item;
+            const img = h('img', { src: p.url, alt: `Semana ${p.week}`, loading: 'lazy' });
+            img.style.cursor = 'zoom-in';
+            img.onclick = () => openLightbox(p.url, `Semana ${p.week}${p.caption ? ' · ' + p.caption : ''}`);
+            return h('div', { class: 'photo-item' }, [img, p.caption ? h('div', { class: 'cap' }, p.caption) : null]);
           }));
         holder.append(g);
       }
@@ -145,10 +145,10 @@ export async function weekDetailView(nav, week, focusUpload = false) {
     for (const p of photos) {
       const del = h('button', { class: 'del', 'aria-label': 'remover' }); del.innerHTML = '×';
       del.onclick = async (ev) => { ev.stopPropagation(); if (!confirm('Remover esta foto?')) return; await api.deletePhoto(p.id); await refresh(); toast('Foto removida.'); };
-      gallery.append(h('div', { class: 'photo-item' }, [
-        h('img', { src: p.url, alt: p.caption || `Semana ${week}`, loading: 'lazy' }), del,
-        p.caption ? h('div', { class: 'cap' }, p.caption) : null,
-      ]));
+      const img = h('img', { src: p.url, alt: p.caption || `Semana ${week}`, loading: 'lazy' });
+      img.style.cursor = 'zoom-in';
+      img.onclick = () => openLightbox(p.url, p.caption || `Semana ${week}`);
+      gallery.append(h('div', { class: 'photo-item' }, [img, del, p.caption ? h('div', { class: 'cap' }, p.caption) : null]));
     }
   }
 

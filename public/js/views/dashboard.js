@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { h, fmtDateBR } from '../ui.js';
+import { h, fmtDateBR, openModal, toast } from '../ui.js';
 import { icon } from '../icons.js';
 
 const QA = [
@@ -56,10 +56,11 @@ export async function dashboardView(nav) {
     ]),
     h('div', { class: 'pct' }, `${d.progress}%`),
   ]);
-  const quote = h('div', { class: 'card quote' }, [
-    h('div', { class: 'mark' }, '“'),
-    h('p', {}, d.quote),
-  ]);
+  const quoteText = h('p', {}, d.quote);
+  const editQuote = h('button', { class: 'quote-edit', 'aria-label': 'editar frase', title: 'Escrever a minha frase' });
+  editQuote.innerHTML = icon('note', 16);
+  editQuote.onclick = () => openMottoEditor(d.customMotto || '', (newQuote) => { quoteText.textContent = newQuote; });
+  const quote = h('div', { class: 'card quote' }, [editQuote, h('div', { class: 'mark' }, '“'), quoteText]);
   dash.append(h('div', { class: 'dash-row two' }, [progress, quote]));
 
   // Quick access
@@ -102,3 +103,23 @@ export async function dashboardView(nav) {
 }
 
 function spanIcon(name, size = 20, cls) { const s = h('span', cls ? { class: cls } : {}); s.style.display = 'inline-flex'; s.innerHTML = icon(name, size); return s; }
+
+function openMottoEditor(current, onSaved) {
+  const input = h('textarea', { rows: '3', placeholder: 'Escreva a sua frase de inspiração…' }, current);
+  const save = h('button', { class: 'btn sm' }, 'Salvar frase');
+  const clear = h('button', { class: 'btn ghost sm' }, 'Voltar à frase do mês');
+  const modal = openModal(h('div', {}, [
+    h('h2', { class: 'display' }, 'Sua frase de inspiração'),
+    h('p', { style: 'color:var(--ink-soft);font-size:13.5px;margin:0 0 12px' }, 'Deixe do seu jeito. Se preferir, volte para a frase que a Papernow escolhe a cada mês.'),
+    h('div', { class: 'field' }, input),
+    h('div', { style: 'display:flex;gap:10px;justify-content:flex-end' }, [clear, save]),
+  ]));
+  save.onclick = async () => {
+    try { const r = await api.setMotto(input.value); modal.close(); toast('Frase atualizada ✨'); if (r.motto) onSaved(r.motto); else location.reload(); }
+    catch (e) { toast(e.message, true); }
+  };
+  clear.onclick = async () => {
+    try { await api.setMotto(''); modal.close(); toast('Voltamos à frase do mês.'); location.reload(); }
+    catch (e) { toast(e.message, true); }
+  };
+}

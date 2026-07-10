@@ -1,5 +1,6 @@
 // Service Worker — Papernow Área de Membros (PWA Fase 1)
-const CACHE = 'papernow-v4';
+const CACHE = 'papernow-v5';
+const UPLOADS_CACHE = 'papernow-uploads-v1';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -31,8 +32,9 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
+  const keep = [CACHE, UPLOADS_CACHE];
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => !keep.includes(k)).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -42,8 +44,22 @@ self.addEventListener('fetch', (e) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
 
-  // API e uploads: sempre rede (dados sensíveis e sempre atualizados).
-  if (url.pathname.startsWith('/api') || url.pathname.startsWith('/uploads')) return;
+  // API: sempre rede (dados sempre atualizados).
+  if (url.pathname.startsWith('/api')) return;
+
+  // Fotos das clientes: cache-first (a foto não muda depois de enviada),
+  // então elas aparecem instantâneas e também funcionam offline.
+  if (url.pathname.startsWith('/uploads')) {
+    e.respondWith(
+      caches.open(UPLOADS_CACHE).then((c) =>
+        c.match(request).then((hit) => hit || fetch(request).then((res) => {
+          if (res.ok) c.put(request, res.clone());
+          return res;
+        }))
+      )
+    );
+    return;
+  }
 
   // App shell / estáticos: cache-first com atualização em segundo plano.
   e.respondWith(

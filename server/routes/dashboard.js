@@ -56,7 +56,9 @@ router.get('/', (req, res) => {
   ];
   const progress = Math.round((steps.filter(Boolean).length / steps.length) * 100);
 
-  const quote = QUOTES[new Date().getUTCMonth() % QUOTES.length];
+  const dbUser = db.prepare('SELECT motto FROM users WHERE id = ?').get(uid);
+  const customMotto = dbUser && dbUser.motto ? dbUser.motto : null;
+  const quote = customMotto || QUOTES[new Date().getUTCMonth() % QUOTES.length];
 
   res.json({
     user: { name: req.user.name || null, email: req.user.email },
@@ -66,7 +68,15 @@ router.get('/', (req, res) => {
     recentNotes,
     recentPhotos,
     quote,
+    customMotto,
   });
+});
+
+// PUT /api/dashboard/motto  { motto }  — frase de inspiração da própria cliente
+router.put('/motto', (req, res) => {
+  const motto = String(req.body.motto || '').trim().slice(0, 160) || null;
+  db.prepare('UPDATE users SET motto = ? WHERE id = ?').run(motto, req.user.uid);
+  res.json({ ok: true, motto });
 });
 
 export default router;

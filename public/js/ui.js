@@ -39,6 +39,20 @@ export function openModal(node) {
   return { close, el: modal };
 }
 
+// Visualizador de foto em tela cheia (tap para ampliar).
+export function openLightbox(url, caption) {
+  const back = h('div', { class: 'lightbox', onclick: () => close() });
+  const img = h('img', { src: url, alt: caption || '' });
+  const cap = caption ? h('div', { class: 'lb-cap' }, caption) : null;
+  const closeBtn = h('button', { class: 'lb-close', 'aria-label': 'fechar' }, '×');
+  closeBtn.onclick = () => close();
+  back.append(closeBtn, img, cap);
+  function onKey(e) { if (e.key === 'Escape') close(); }
+  function close() { back.remove(); document.removeEventListener('keydown', onKey); }
+  document.addEventListener('keydown', onKey);
+  document.body.append(back);
+}
+
 export function fmtDateBR(iso) {
   if (!iso) return '';
   const [y, m, d] = iso.slice(0, 10).split('-');

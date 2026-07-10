@@ -44,5 +44,7 @@ export const api = {
   },
   createNote: (n) => request('POST', '/api/notes', n),
   updateNote: (id, n) => request('PUT', `/api/notes/${id}`, n),
+  toggleNoteDone: (id, done) => request('PATCH', `/api/notes/${id}/done`, { done }),
   deleteNote: (id) => request('DELETE', `/api/notes/${id}`),
+  setMotto: (motto) => request('PUT', '/api/dashboard/motto', { motto }),
 };

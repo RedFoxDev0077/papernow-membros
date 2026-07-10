@@ -61,6 +61,15 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_notes_user ON notes(user_id, updated_at);
 `);
 
+// Migrações leves e idempotentes (adiciona colunas novas se ainda não existirem).
+function addColumn(table, column, ddl) {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all().map((c) => c.name);
+  if (!cols.includes(column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
+}
+addColumn('notes', 'color', 'color TEXT');          // categoria por cor
+addColumn('notes', 'done', 'done INTEGER DEFAULT 0'); // marcar como resolvida
+addColumn('users', 'motto', 'motto TEXT');          // frase de inspiração personalizada
+
 export function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }

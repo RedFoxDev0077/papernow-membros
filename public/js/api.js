@@ -34,6 +34,7 @@ export const api = {
   reset: (token, password) => request('POST', '/api/auth/reset', { token, password }),
 
   // Dados
+  dashboard: () => request('GET', '/api/dashboard'),
   calendar: () => request('GET', '/api/calendar'),
   photos: (week) => request('GET', `/api/photos${week ? `?week=${week}` : ''}`),
   deletePhoto: (id) => request('DELETE', `/api/photos/${id}`),

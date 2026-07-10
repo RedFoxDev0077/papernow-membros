@@ -59,4 +59,24 @@ export function isValidWeek(n) {
   return Number.isInteger(n) && n >= 1 && n <= 52;
 }
 
+// Semana "atual" do planner: mapeia a data de hoje para o calendário do planner.
+// Se hoje estiver fora do ano do planner, projeta o mesmo dia/mês no ano do planner
+// para que a experiência já faça sentido durante os testes.
+export function currentWeek(now = new Date()) {
+  const weeks = buildWeeks();
+  const firstStart = new Date(weeks[0].startDate + 'T00:00:00Z');
+  const lastEnd = new Date(weeks[51].endDate + 'T23:59:59Z');
+
+  let ref = new Date(Date.UTC(config.plannerYear, now.getUTCMonth(), now.getUTCDate()));
+  if (ref < firstStart) ref = firstStart;
+  if (ref > lastEnd) ref = lastEnd;
+
+  for (const w of weeks) {
+    const start = new Date(w.startDate + 'T00:00:00Z');
+    const end = new Date(w.endDate + 'T23:59:59Z');
+    if (ref >= start && ref <= end) return w;
+  }
+  return weeks[0];
+}
+
 export { MONTHS_PT };

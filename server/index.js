@@ -9,6 +9,7 @@ import accessRoutes from './routes/access.js';
 import calendarRoutes from './routes/calendar.js';
 import photoRoutes from './routes/photos.js';
 import noteRoutes from './routes/notes.js';
+import dashboardRoutes from './routes/dashboard.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -37,6 +38,7 @@ app.use('/api/access', accessRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/photos', photoRoutes);
 app.use('/api/notes', noteRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Fotos das clientes (privadas por pasta de usuário; servidas com cache curto)
 app.use('/uploads', express.static(config.paths.uploads, { maxAge: '1h', index: false }));

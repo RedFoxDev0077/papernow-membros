@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 760" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#efe6d6"/>
+      <stop offset="0.55" stop-color="#e7dcc8"/>
+      <stop offset="1" stop-color="#dfd2ba"/>
+    </linearGradient>
+    <linearGradient id="page" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdfbf6"/>
+      <stop offset="1" stop-color="#f4ecdd"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="760" fill="url(#bg)"/>
+  <!-- soft linen texture strokes -->
+  <g stroke="#d8c8ab" stroke-width="1" opacity="0.35">
+    <path d="M0 120 H600 M0 250 H600 M0 380 H600 M0 510 H600 M0 640 H600"/>
+  </g>
+  <!-- notebook -->
+  <g transform="rotate(-7 300 400)">
+    <rect x="150" y="230" width="300" height="360" rx="16" fill="#cdb79a"/>
+    <rect x="150" y="222" width="300" height="360" rx="16" fill="url(#page)" stroke="#e3d6bd"/>
+    <text x="300" y="300" text-anchor="middle" font-family="Georgia, serif" font-size="34" fill="#b07c52">&#8734;</text>
+    <text x="300" y="330" text-anchor="middle" font-family="Georgia, serif" font-size="12" letter-spacing="4" fill="#9c7a5c">PAPERNOW</text>
+    <g stroke="#e0d2b8" stroke-width="2" stroke-linecap="round">
+      <path d="M195 380 H405 M195 410 H405 M195 440 H370 M195 470 H405 M195 500 H360 M195 530 H405"/>
+    </g>
+  </g>
+  <!-- pen -->
+  <g transform="rotate(24 430 470)">
+    <rect x="418" y="330" width="12" height="230" rx="6" fill="#c68b5f"/>
+    <path d="M418 330 L424 312 L430 330 Z" fill="#8a5433"/>
+    <rect x="418" y="430" width="12" height="10" fill="#e9dcc6"/>
+  </g>
+  <!-- botanical sprig -->
+  <g transform="translate(70 120)" fill="none" stroke="#c39b78" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M60 220 C58 170 60 120 78 70 C86 48 98 28 112 12"/>
+    <path d="M60 190 C44 184 34 172 30 156 C48 160 58 172 60 190Z"/>
+    <path d="M60 190 C76 182 86 170 90 154 C72 158 64 172 60 190Z"/>
+    <path d="M62 150 C48 145 40 134 37 120 C53 124 60 135 62 150Z"/>
+    <path d="M62 150 C76 143 84 132 86 118 C70 122 64 135 62 150Z"/>
+    <path d="M66 112 C55 108 48 99 46 88 C59 92 65 100 66 112Z"/>
+    <path d="M66 112 C78 106 85 96 86 85 C73 89 68 99 66 112Z"/>
+    <circle cx="112" cy="12" r="3" fill="#c39b78" stroke="none"/>
+  </g>
+</svg>

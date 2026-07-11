@@ -14,6 +14,34 @@ authenticator.options = { window: 1 }; // tolera 1 janela de tempo (relógio um 
 
 const router = Router();
 
+// Gera e guarda (com hash) novos códigos de recuperação; devolve os códigos em texto UMA vez.
+async function generateRecoveryCodes(uid, n = 8) {
+  db.prepare('DELETE FROM recovery_codes WHERE user_id = ?').run(uid);
+  const ins = db.prepare('INSERT INTO recovery_codes (user_id, code_hash) VALUES (?, ?)');
+  const codes = [];
+  for (let i = 0; i < n; i++) {
+    const raw = crypto.randomBytes(5).toString('hex'); // 10 hex
+    codes.push(`${raw.slice(0, 5)}-${raw.slice(5)}`);
+    ins.run(uid, await bcrypt.hash(raw, 10));
+  }
+  return codes;
+}
+const normalizeCode = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// Verifica um código de recuperação; consome-o se válido.
+async function consumeRecoveryCode(uid, input) {
+  const norm = normalizeCode(input);
+  if (norm.length < 8) return false;
+  const rows = db.prepare('SELECT id, code_hash FROM recovery_codes WHERE user_id = ? AND used = 0').all(uid);
+  for (const r of rows) {
+    if (await bcrypt.compare(norm, r.code_hash)) {
+      db.prepare('UPDATE recovery_codes SET used = 1 WHERE id = ?').run(r.id);
+      return true;
+    }
+  }
+  return false;
+}
+
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
@@ -102,8 +130,8 @@ router.post('/login', authLimiter, async (req, res) => {
   res.json({ user: { id: user.id, email: user.email, name: user.name } });
 });
 
-// POST /api/auth/login/2fa  { ticket, code }
-router.post('/login/2fa', authLimiter, (req, res) => {
+// POST /api/auth/login/2fa  { ticket, code }  — aceita código do app OU de recuperação
+router.post('/login/2fa', authLimiter, async (req, res) => {
   let payload;
   try { payload = jwt.verify(String(req.body.ticket || ''), config.jwtSecret); }
   catch { return res.status(401).json({ error: 'Sessão de verificação expirada. Entre novamente.' }); }
@@ -113,11 +141,13 @@ router.post('/login/2fa', authLimiter, (req, res) => {
   if (!user || !user.totp_enabled) return res.status(400).json({ error: 'Verificação indisponível.' });
 
   const code = String(req.body.code || '').replace(/\s/g, '');
-  if (!authenticator.check(code, decrypt(user.totp_secret))) {
+  const okTotp = authenticator.check(code, decrypt(user.totp_secret));
+  const okRecovery = okTotp ? false : await consumeRecoveryCode(user.id, req.body.code);
+  if (!okTotp && !okRecovery) {
     return res.status(401).json({ error: 'Código incorreto. Tente novamente.' });
   }
   issueSession(req, res, user);
-  res.json({ user: { id: user.id, email: user.email, name: user.name } });
+  res.json({ user: { id: user.id, email: user.email, name: user.name }, usedRecovery: okRecovery });
 });
 
 // POST /api/auth/logout
@@ -169,7 +199,8 @@ router.post('/reset', authLimiter, async (req, res) => {
 // GET /api/auth/2fa/status
 router.get('/2fa/status', requireAuth, (req, res) => {
   const u = db.prepare('SELECT totp_enabled FROM users WHERE id = ?').get(req.user.uid);
-  res.json({ enabled: !!(u && u.totp_enabled) });
+  const remaining = db.prepare('SELECT COUNT(*) AS n FROM recovery_codes WHERE user_id = ? AND used = 0').get(req.user.uid).n;
+  res.json({ enabled: !!(u && u.totp_enabled), recoveryRemaining: remaining });
 });
 
 // POST /api/auth/2fa/setup — gera o segredo e o QR code para o app autenticador
@@ -182,8 +213,8 @@ router.post('/2fa/setup', requireAuth, async (req, res) => {
   res.json({ secret, otpauth, qr });
 });
 
-// POST /api/auth/2fa/enable  { code } — confirma o código e ativa o 2FA
-router.post('/2fa/enable', requireAuth, (req, res) => {
+// POST /api/auth/2fa/enable  { code } — confirma o código, ativa o 2FA e gera os códigos de recuperação
+router.post('/2fa/enable', requireAuth, async (req, res) => {
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.uid);
   if (!user.totp_secret) return res.status(400).json({ error: 'Comece a configuração primeiro.' });
   const code = String(req.body.code || '').replace(/\s/g, '');
@@ -191,7 +222,20 @@ router.post('/2fa/enable', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Código incorreto. Confira o app autenticador.' });
   }
   db.prepare('UPDATE users SET totp_enabled = 1 WHERE id = ?').run(user.id);
-  res.json({ ok: true, enabled: true });
+  const recovery = await generateRecoveryCodes(user.id);
+  res.json({ ok: true, enabled: true, recovery });
+});
+
+// POST /api/auth/2fa/recovery — gera novos códigos de recuperação (exige um código atual)
+router.post('/2fa/recovery', requireAuth, async (req, res) => {
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.uid);
+  if (!user.totp_enabled) return res.status(400).json({ error: 'Ative a verificação em 2 fatores primeiro.' });
+  const code = String(req.body.code || '').replace(/\s/g, '');
+  if (!authenticator.check(code, decrypt(user.totp_secret))) {
+    return res.status(400).json({ error: 'Código incorreto. Confira o app autenticador.' });
+  }
+  const recovery = await generateRecoveryCodes(user.id);
+  res.json({ ok: true, recovery });
 });
 
 // POST /api/auth/2fa/disable  { code } — desativa o 2FA
@@ -203,6 +247,7 @@ router.post('/2fa/disable', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Código incorreto.' });
   }
   db.prepare('UPDATE users SET totp_enabled = 0, totp_secret = NULL WHERE id = ?').run(user.id);
+  db.prepare('DELETE FROM recovery_codes WHERE user_id = ?').run(user.id);
   res.json({ ok: true, enabled: false });
 });
 

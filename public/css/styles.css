@@ -379,6 +379,10 @@ img { max-width: 100%; }
 .retro-foot p { margin: 8px 0 0; font-family: var(--display); font-size: 17px; }
 @media (max-width: 560px) { .retro-stats { grid-template-columns: 1fr; } }
 
+/* ===== Recovery codes ===== */
+.recovery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.recovery-grid code { background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px; text-align: center; font-size: 15px; letter-spacing: 1px; color: var(--ink); }
+
 /* ===== Quote edit ===== */
 .quote { position: relative; }
 .quote-edit { position: absolute; top: 14px; right: 14px; background: none; border: none; color: var(--ink-faint); padding: 6px; border-radius: 8px; line-height: 0; }

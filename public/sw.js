@@ -1,5 +1,5 @@
 // Service Worker — Papernow Área de Membros (PWA Fase 1)
-const CACHE = 'papernow-v7';
+const CACHE = 'papernow-v8';
 const UPLOADS_CACHE = 'papernow-uploads-v1';
 const APP_SHELL = [
   '/',

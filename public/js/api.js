@@ -35,6 +35,7 @@ export const api = {
   twofaSetup: () => request('POST', '/api/auth/2fa/setup'),
   twofaEnable: (code) => request('POST', '/api/auth/2fa/enable', { code }),
   twofaDisable: (code) => request('POST', '/api/auth/2fa/disable', { code }),
+  twofaRecovery: (code) => request('POST', '/api/auth/2fa/recovery', { code }),
   forgot: (email) => request('POST', '/api/auth/forgot', { email }),
   reset: (token, password) => request('POST', '/api/auth/reset', { token, password }),
 

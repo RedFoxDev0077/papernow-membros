@@ -115,13 +115,13 @@ export function renderAuth(root, onAuthed) {
     return box;
   }
   function twofaView() {
-    const code = h('input', { type: 'text', inputmode: 'numeric', autocomplete: 'one-time-code', placeholder: '000000', maxlength: '6', style: 'letter-spacing:6px;text-align:center;font-size:20px' });
+    const code = h('input', { type: 'text', autocomplete: 'one-time-code', placeholder: '000000 ou código de recuperação', maxlength: '20', style: 'text-align:center;font-size:18px' });
     const btn = h('button', { class: 'btn block' }, 'Verificar');
     btn.onclick = () => run(btn, async () => { await api.login2fa(twofaStep.ticket, code.value); onAuthed(); });
     return [
       brand(),
       h('h1', { class: 'display' }, 'Verificação em 2 fatores'),
-      h('p', { class: 'auth-sub' }, 'Digite o código de 6 dígitos do seu app autenticador (Google Authenticator, Authy…).'),
+      h('p', { class: 'auth-sub' }, 'Digite o código de 6 dígitos do seu app autenticador — ou um dos seus códigos de recuperação.'),
       h('div', { class: 'field' }, [h('label', {}, 'Código'), code]),
       msg(), btn,
       h('div', { class: 'switch-row' }, h('button', { class: 'linkbtn', onclick: () => { twofaStep = null; paint(); } }, 'Voltar')),

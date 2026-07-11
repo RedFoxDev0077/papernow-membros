@@ -44,6 +44,28 @@ export async function profileView(nav, onLogout) {
     const btn = h('button', { class: 'btn sm' + (twofa.enabled ? ' ghost' : '') }, twofa.enabled ? 'Desativar' : 'Ativar');
     btn.onclick = () => twofa.enabled ? disable2fa() : enable2fa();
     statusLine.append(label, btn);
+    secCard.querySelector('.recovery-line')?.remove();
+    if (twofa.enabled) {
+      const rec = h('div', { class: 'recovery-line', style: 'display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line-soft)' }, [
+        h('span', { style: 'font-size:13px;color:var(--ink-soft)' }, `Códigos de recuperação: ${twofa.recoveryRemaining ?? '—'} restantes`),
+        (() => { const b = h('button', { class: 'btn ghost sm' }, 'Gerar novos'); b.onclick = () => regenerateCodes(); return b; })(),
+      ]);
+      secCard.append(rec);
+    }
+  }
+
+  function showRecoveryCodes(codes) {
+    const grid = h('div', { class: 'recovery-grid' }, codes.map((c) => h('code', {}, c)));
+    const copyBtn = h('button', { class: 'btn ghost sm' }, 'Copiar códigos');
+    copyBtn.onclick = () => { navigator.clipboard?.writeText(codes.join('\n')).then(() => toast('Códigos copiados.')); };
+    const doneBtn = h('button', { class: 'btn sm' }, 'Guardei os códigos');
+    const modal = openModal(h('div', {}, [
+      h('h2', { class: 'display' }, 'Seus códigos de recuperação'),
+      h('p', { style: 'color:var(--ink-soft);font-size:13.5px;margin:0 0 12px' }, 'Guarde estes códigos num lugar seguro. Se você perder o celular, cada código serve uma vez para entrar. Eles não serão mostrados de novo.'),
+      grid,
+      h('div', { style: 'display:flex;gap:10px;justify-content:flex-end;margin-top:14px' }, [copyBtn, doneBtn]),
+    ]));
+    doneBtn.onclick = () => modal.close();
   }
   paintStatus();
   wrap.append(secCard);
@@ -67,8 +89,31 @@ export async function profileView(nav, onLogout) {
       h('div', { style: 'display:flex;justify-content:flex-end' }, confirm),
     ]));
     confirm.onclick = async () => {
-      try { await api.twofaEnable(code.value); twofa.enabled = true; modal.close(); paintStatus(); toast('Verificação em 2 fatores ativada 🔒'); }
-      catch (e) { toast(e.message, true); }
+      try {
+        const r = await api.twofaEnable(code.value);
+        twofa.enabled = true; twofa.recoveryRemaining = (r.recovery || []).length;
+        modal.close(); paintStatus(); toast('Verificação em 2 fatores ativada 🔒');
+        if (r.recovery && r.recovery.length) showRecoveryCodes(r.recovery);
+      } catch (e) { toast(e.message, true); }
+    };
+  }
+
+  async function regenerateCodes() {
+    const code = h('input', { type: 'text', inputmode: 'numeric', maxlength: '6', placeholder: '000000', style: 'text-align:center;letter-spacing:6px;font-size:18px' });
+    const confirm = h('button', { class: 'btn sm' }, 'Gerar novos códigos');
+    const modal = openModal(h('div', {}, [
+      h('h2', { class: 'display' }, 'Novos códigos de recuperação'),
+      h('p', { style: 'color:var(--ink-soft);font-size:13.5px;margin:0 0 12px' }, 'Isto invalida os códigos anteriores. Digite um código atual do app para confirmar.'),
+      h('div', { class: 'field' }, [h('label', {}, 'Código do app'), code]),
+      h('div', { style: 'display:flex;justify-content:flex-end' }, confirm),
+    ]));
+    confirm.onclick = async () => {
+      try {
+        const r = await api.twofaRecovery(code.value);
+        twofa.recoveryRemaining = (r.recovery || []).length;
+        modal.close(); paintStatus();
+        if (r.recovery) showRecoveryCodes(r.recovery);
+      } catch (e) { toast(e.message, true); }
     };
   }
 

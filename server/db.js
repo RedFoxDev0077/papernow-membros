@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { config } from './config.js';
+import { encrypt, isEncrypted } from './crypto.js';
 
 fs.mkdirSync(config.paths.uploads, { recursive: true });
 
@@ -83,6 +84,27 @@ function addColumn(table, column, ddl) {
 addColumn('notes', 'color', 'color TEXT');          // categoria por cor
 addColumn('notes', 'done', 'done INTEGER DEFAULT 0'); // marcar como resolvida
 addColumn('users', 'motto', 'motto TEXT');          // frase de inspiração personalizada
+addColumn('users', 'totp_secret', 'totp_secret TEXT');       // 2FA
+addColumn('users', 'totp_enabled', 'totp_enabled INTEGER DEFAULT 0');
+
+// Migração única: criptografa dados sensíveis já existentes (idempotente).
+function encryptExisting(table, columns) {
+  const rows = db.prepare(`SELECT id, ${columns.join(', ')} FROM ${table}`).all();
+  const set = columns.map((c) => `${c} = ?`).join(', ');
+  const upd = db.prepare(`UPDATE ${table} SET ${set} WHERE id = ?`);
+  for (const row of rows) {
+    let changed = false;
+    const values = columns.map((c) => {
+      const v = row[c];
+      if (v != null && v !== '' && !isEncrypted(v)) { changed = true; return encrypt(v); }
+      return v;
+    });
+    if (changed) upd.run(...values, row.id);
+  }
+}
+encryptExisting('notes', ['title', 'body']);
+encryptExisting('photos', ['caption']);
+encryptExisting('users', ['motto']);
 
 export function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();

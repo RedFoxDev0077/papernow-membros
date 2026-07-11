@@ -3,6 +3,7 @@ import { db } from '../db.js';
 import { requireAuth } from '../auth-middleware.js';
 import { currentWeek } from '../weeks.js';
 import { config } from '../config.js';
+import { encrypt, decrypt } from '../crypto.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -37,7 +38,8 @@ router.get('/', (req, res) => {
 
   const recentNotes = db
     .prepare('SELECT id, kind, title, body, note_date, week, updated_at FROM notes WHERE user_id = ? ORDER BY updated_at DESC LIMIT 3')
-    .all(uid);
+    .all(uid)
+    .map((n) => ({ ...n, title: decrypt(n.title), body: decrypt(n.body) }));
 
   const recentPhotos = db
     .prepare('SELECT week, filename FROM photos WHERE user_id = ? ORDER BY created_at DESC LIMIT 4')
@@ -57,7 +59,7 @@ router.get('/', (req, res) => {
   const progress = Math.round((steps.filter(Boolean).length / steps.length) * 100);
 
   const dbUser = db.prepare('SELECT motto FROM users WHERE id = ?').get(uid);
-  const customMotto = dbUser && dbUser.motto ? dbUser.motto : null;
+  const customMotto = dbUser && dbUser.motto ? decrypt(dbUser.motto) : null;
   const quote = customMotto || QUOTES[new Date().getUTCMonth() % QUOTES.length];
 
   res.json({
@@ -75,7 +77,7 @@ router.get('/', (req, res) => {
 // PUT /api/dashboard/motto  { motto }  — frase de inspiração da própria cliente
 router.put('/motto', (req, res) => {
   const motto = String(req.body.motto || '').trim().slice(0, 160) || null;
-  db.prepare('UPDATE users SET motto = ? WHERE id = ?').run(motto, req.user.uid);
+  db.prepare('UPDATE users SET motto = ? WHERE id = ?').run(motto ? encrypt(motto) : null, req.user.uid);
   res.json({ ok: true, motto });
 });
 

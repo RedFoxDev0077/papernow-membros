@@ -3,6 +3,7 @@ import { db } from '../db.js';
 import { requireAuth } from '../auth-middleware.js';
 import { buildWeeks } from '../weeks.js';
 import { config } from '../config.js';
+import { decrypt } from '../crypto.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -23,12 +24,13 @@ router.get('/', (req, res) => {
   for (const p of photos) {
     const m = monthOf[p.week]?.month || 1;
     (byMonth[m] ||= { month: m, monthName: monthOf[p.week]?.monthName || '', photos: [] })
-      .photos.push({ week: p.week, url: `/uploads/${uid}/${p.filename}`, caption: p.caption });
+      .photos.push({ week: p.week, url: `/uploads/${uid}/${p.filename}`, caption: decrypt(p.caption) });
   }
   const months = Object.values(byMonth).sort((a, b) => a.month - b.month);
 
   // Alguns destaques de anotações (com título ou texto)
   const highlights = notes
+    .map((n) => ({ ...n, title: decrypt(n.title), body: decrypt(n.body) }))
     .filter((n) => (n.title && n.title.trim()) || (n.body && n.body.trim()))
     .slice(-6)
     .reverse()

@@ -1,9 +1,16 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
+import { authenticator } from 'otplib';
+import QRCode from 'qrcode';
 import { db, normalizeEmail, normalizeCpf } from '../db.js';
 import { issueSession, clearSession, requireAuth } from '../auth-middleware.js';
+import { encrypt, decrypt } from '../crypto.js';
+import { config } from '../config.js';
+
+authenticator.options = { window: 1 }; // tolera 1 janela de tempo (relógio um pouco fora)
 
 const router = Router();
 
@@ -86,6 +93,29 @@ router.post('/login', authLimiter, async (req, res) => {
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
   }
+  // Se a cliente ativou a verificação em 2 fatores, pede o código antes da sessão.
+  if (user.totp_enabled) {
+    const ticket = jwt.sign({ uid: user.id, pending2fa: true }, config.jwtSecret, { expiresIn: '5m' });
+    return res.json({ twofa: true, ticket });
+  }
+  issueSession(req, res, user);
+  res.json({ user: { id: user.id, email: user.email, name: user.name } });
+});
+
+// POST /api/auth/login/2fa  { ticket, code }
+router.post('/login/2fa', authLimiter, (req, res) => {
+  let payload;
+  try { payload = jwt.verify(String(req.body.ticket || ''), config.jwtSecret); }
+  catch { return res.status(401).json({ error: 'Sessão de verificação expirada. Entre novamente.' }); }
+  if (!payload.pending2fa) return res.status(400).json({ error: 'Verificação inválida.' });
+
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(payload.uid);
+  if (!user || !user.totp_enabled) return res.status(400).json({ error: 'Verificação indisponível.' });
+
+  const code = String(req.body.code || '').replace(/\s/g, '');
+  if (!authenticator.check(code, decrypt(user.totp_secret))) {
+    return res.status(401).json({ error: 'Código incorreto. Tente novamente.' });
+  }
   issueSession(req, res, user);
   res.json({ user: { id: user.id, email: user.email, name: user.name } });
 });
@@ -132,6 +162,48 @@ router.post('/reset', authLimiter, async (req, res) => {
   db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, row.user_id);
   db.prepare('UPDATE password_resets SET used = 1 WHERE id = ?').run(row.id);
   res.json({ ok: true });
+});
+
+// ---- Verificação em 2 fatores (TOTP) ----
+
+// GET /api/auth/2fa/status
+router.get('/2fa/status', requireAuth, (req, res) => {
+  const u = db.prepare('SELECT totp_enabled FROM users WHERE id = ?').get(req.user.uid);
+  res.json({ enabled: !!(u && u.totp_enabled) });
+});
+
+// POST /api/auth/2fa/setup — gera o segredo e o QR code para o app autenticador
+router.post('/2fa/setup', requireAuth, async (req, res) => {
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.uid);
+  const secret = authenticator.generateSecret();
+  db.prepare('UPDATE users SET totp_secret = ?, totp_enabled = 0 WHERE id = ?').run(encrypt(secret), user.id);
+  const otpauth = authenticator.keyuri(user.email, 'Papernow', secret);
+  const qr = await QRCode.toDataURL(otpauth, { margin: 1, color: { dark: '#4a3f35', light: '#fbf7ef' } });
+  res.json({ secret, otpauth, qr });
+});
+
+// POST /api/auth/2fa/enable  { code } — confirma o código e ativa o 2FA
+router.post('/2fa/enable', requireAuth, (req, res) => {
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.uid);
+  if (!user.totp_secret) return res.status(400).json({ error: 'Comece a configuração primeiro.' });
+  const code = String(req.body.code || '').replace(/\s/g, '');
+  if (!authenticator.check(code, decrypt(user.totp_secret))) {
+    return res.status(400).json({ error: 'Código incorreto. Confira o app autenticador.' });
+  }
+  db.prepare('UPDATE users SET totp_enabled = 1 WHERE id = ?').run(user.id);
+  res.json({ ok: true, enabled: true });
+});
+
+// POST /api/auth/2fa/disable  { code } — desativa o 2FA
+router.post('/2fa/disable', requireAuth, (req, res) => {
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.uid);
+  if (!user.totp_enabled) return res.json({ ok: true, enabled: false });
+  const code = String(req.body.code || '').replace(/\s/g, '');
+  if (!authenticator.check(code, decrypt(user.totp_secret))) {
+    return res.status(400).json({ error: 'Código incorreto.' });
+  }
+  db.prepare('UPDATE users SET totp_enabled = 0, totp_secret = NULL WHERE id = ?').run(user.id);
+  res.json({ ok: true, enabled: false });
 });
 
 export default router;

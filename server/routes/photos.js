@@ -8,6 +8,7 @@ import { db } from '../db.js';
 import { requireAuth } from '../auth-middleware.js';
 import { config } from '../config.js';
 import { isValidWeek } from '../weeks.js';
+import { encrypt, decrypt } from '../crypto.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -36,7 +37,7 @@ router.get('/', (req, res) => {
   } else {
     rows = db.prepare('SELECT id, week, filename, caption, created_at FROM photos WHERE user_id = ? ORDER BY week, created_at').all(req.user.uid);
   }
-  res.json({ photos: rows.map((r) => ({ ...r, url: `/uploads/${req.user.uid}/${r.filename}` })) });
+  res.json({ photos: rows.map((r) => ({ ...r, caption: decrypt(r.caption), url: `/uploads/${req.user.uid}/${r.filename}` })) });
 });
 
 // POST /api/photos  (multipart: photo, week, caption)
@@ -67,7 +68,7 @@ router.post('/', upload.single('photo'), async (req, res) => {
   const caption = String(req.body.caption || '').slice(0, 280);
   const info = db
     .prepare('INSERT INTO photos (user_id, week, filename, original, caption) VALUES (?, ?, ?, ?, ?)')
-    .run(req.user.uid, week, filename, req.file.originalname?.slice(0, 200) || null, caption || null);
+    .run(req.user.uid, week, filename, req.file.originalname?.slice(0, 200) || null, caption ? encrypt(caption) : null);
 
   res.status(201).json({
     photo: { id: info.lastInsertRowid, week, filename, caption, url: `/uploads/${req.user.uid}/${filename}` },
@@ -79,7 +80,7 @@ router.patch('/:id', (req, res) => {
   const photo = db.prepare('SELECT * FROM photos WHERE id = ? AND user_id = ?').get(req.params.id, req.user.uid);
   if (!photo) return res.status(404).json({ error: 'Foto não encontrada.' });
   const caption = String(req.body.caption || '').slice(0, 280);
-  db.prepare('UPDATE photos SET caption = ? WHERE id = ?').run(caption, photo.id);
+  db.prepare('UPDATE photos SET caption = ? WHERE id = ?').run(caption ? encrypt(caption) : null, photo.id);
   res.json({ ok: true });
 });
 

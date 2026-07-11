@@ -2,48 +2,48 @@ import { Router } from 'express';
 import { db } from '../db.js';
 import { requireAuth } from '../auth-middleware.js';
 import { isValidWeek } from '../weeks.js';
+import { encrypt, decrypt } from '../crypto.js';
 
 const router = Router();
 router.use(requireAuth);
 
 const KINDS = new Set(['diaria', 'semanal', 'livre']);
 
+// Descriptografa os campos de texto de uma anotação para o dono.
+function open(note) {
+  if (!note) return note;
+  return { ...note, title: decrypt(note.title), body: decrypt(note.body) };
+}
+
 // GET /api/notes?q=&kind=&week=&date=
 router.get('/', (req, res) => {
   const clauses = ['user_id = ?'];
   const params = [req.user.uid];
 
-  if (req.query.kind && KINDS.has(req.query.kind)) {
-    clauses.push('kind = ?');
-    params.push(req.query.kind);
-  }
-  if (req.query.week && isValidWeek(Number(req.query.week))) {
-    clauses.push('week = ?');
-    params.push(Number(req.query.week));
-  }
-  if (req.query.date) {
-    clauses.push('note_date = ?');
-    params.push(String(req.query.date));
-  }
-  if (req.query.q) {
-    // Busca por palavras (título + corpo)
-    clauses.push('(title LIKE ? OR body LIKE ?)');
-    const like = `%${String(req.query.q).slice(0, 100)}%`;
-    params.push(like, like);
-  }
+  if (req.query.kind && KINDS.has(req.query.kind)) { clauses.push('kind = ?'); params.push(req.query.kind); }
+  if (req.query.week && isValidWeek(Number(req.query.week))) { clauses.push('week = ?'); params.push(Number(req.query.week)); }
+  if (req.query.date) { clauses.push('note_date = ?'); params.push(String(req.query.date)); }
 
   const rows = db
     .prepare(`SELECT id, kind, title, body, note_date, week, color, done, created_at, updated_at
-              FROM notes WHERE ${clauses.join(' AND ')} ORDER BY done ASC, updated_at DESC LIMIT 500`)
-    .all(...params);
-  res.json({ notes: rows });
+              FROM notes WHERE ${clauses.join(' AND ')} ORDER BY done ASC, updated_at DESC LIMIT 1000`)
+    .all(...params)
+    .map(open);
+
+  // Busca por palavras: feita após descriptografar (os campos ficam cifrados no banco).
+  let notes = rows;
+  if (req.query.q) {
+    const q = String(req.query.q).toLowerCase().slice(0, 100);
+    notes = rows.filter((n) => `${n.title || ''} ${n.body || ''}`.toLowerCase().includes(q));
+  }
+  res.json({ notes: notes.slice(0, 500) });
 });
 
 // GET /api/notes/:id
 router.get('/:id', (req, res) => {
   const note = db.prepare('SELECT * FROM notes WHERE id = ? AND user_id = ?').get(req.params.id, req.user.uid);
   if (!note) return res.status(404).json({ error: 'Anotação não encontrada.' });
-  res.json({ note });
+  res.json({ note: open(note) });
 });
 
 // Cor da categoria: aceita um hex curto da paleta (ou null).
@@ -63,9 +63,8 @@ router.post('/', (req, res) => {
 
   const info = db
     .prepare('INSERT INTO notes (user_id, kind, title, body, note_date, week, color) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .run(req.user.uid, kind, title || null, body, note_date, week, color);
-  const note = db.prepare('SELECT * FROM notes WHERE id = ?').get(info.lastInsertRowid);
-  res.status(201).json({ note });
+    .run(req.user.uid, kind, title ? encrypt(title) : null, encrypt(body), note_date, week, color);
+  res.status(201).json({ note: open(db.prepare('SELECT * FROM notes WHERE id = ?').get(info.lastInsertRowid)) });
 });
 
 // PUT /api/notes/:id
@@ -74,16 +73,17 @@ router.put('/:id', (req, res) => {
   if (!note) return res.status(404).json({ error: 'Anotação não encontrada.' });
 
   const kind = KINDS.has(req.body.kind) ? req.body.kind : note.kind;
-  const title = req.body.title != null ? String(req.body.title).slice(0, 200) : note.title;
-  const body = req.body.body != null ? String(req.body.body).slice(0, 20000) : note.body;
+  // Campos de texto: se vier novo valor, cifra; senão mantém o já cifrado no banco.
+  const title = req.body.title != null ? (String(req.body.title).slice(0, 200) ? encrypt(String(req.body.title).slice(0, 200)) : null) : note.title;
+  const body = req.body.body != null ? encrypt(String(req.body.body).slice(0, 20000)) : note.body;
   const note_date = req.body.note_date !== undefined ? req.body.note_date : note.note_date;
   const week = kind === 'semanal' && isValidWeek(Number(req.body.week)) ? Number(req.body.week) : note.week;
   const color = req.body.color !== undefined ? cleanColor(req.body.color) : note.color;
   const done = req.body.done !== undefined ? (req.body.done ? 1 : 0) : note.done;
 
   db.prepare("UPDATE notes SET kind=?, title=?, body=?, note_date=?, week=?, color=?, done=?, updated_at=datetime('now') WHERE id=?")
-    .run(kind, title || null, body, note_date || null, week, color, done, note.id);
-  res.json({ note: db.prepare('SELECT * FROM notes WHERE id = ?').get(note.id) });
+    .run(kind, title, body, note_date || null, week, color, done, note.id);
+  res.json({ note: open(db.prepare('SELECT * FROM notes WHERE id = ?').get(note.id)) });
 });
 
 // PATCH /api/notes/:id/done  { done }

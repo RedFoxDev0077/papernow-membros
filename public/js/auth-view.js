@@ -5,6 +5,7 @@ import { icon } from './icons.js';
 // Telas de autenticação com a identidade Papernow (foto + frases da marca).
 export function renderAuth(root, onAuthed) {
   let mode = 'login';
+  let twofaStep = null; // { ticket } quando o login pede o código 2FA
   const resetToken = new URLSearchParams(location.search).get('token');
   if (resetToken) mode = 'reset';
 
@@ -37,7 +38,11 @@ export function renderAuth(root, onAuthed) {
     const email = h('input', { type: 'email', autocomplete: 'email', placeholder: 'seu@email.com' });
     const p = pw('••••••••', 'current-password');
     const btn = h('button', { class: 'btn block' }, 'Entrar');
-    btn.onclick = () => run(btn, async () => { await api.login({ email: email.value, password: p.input.value }); onAuthed(); });
+    btn.onclick = () => run(btn, async () => {
+      const r = await api.login({ email: email.value, password: p.input.value });
+      if (r && r.twofa) { twofaStep = { ticket: r.ticket }; paint(); return; }
+      onAuthed();
+    });
     return [
       brand(),
       h('h1', { class: 'display' }, ['Bem-vinda de volta ', h('span', { class: 'heart' }, '♡')]),
@@ -109,8 +114,24 @@ export function renderAuth(root, onAuthed) {
     box.innerHTML = icon('lock', 15) + '<span>Este espaço é só seu. Suas fotos e anotações são privadas e ninguém mais tem acesso a elas.</span>';
     return box;
   }
+  function twofaView() {
+    const code = h('input', { type: 'text', inputmode: 'numeric', autocomplete: 'one-time-code', placeholder: '000000', maxlength: '6', style: 'letter-spacing:6px;text-align:center;font-size:20px' });
+    const btn = h('button', { class: 'btn block' }, 'Verificar');
+    btn.onclick = () => run(btn, async () => { await api.login2fa(twofaStep.ticket, code.value); onAuthed(); });
+    return [
+      brand(),
+      h('h1', { class: 'display' }, 'Verificação em 2 fatores'),
+      h('p', { class: 'auth-sub' }, 'Digite o código de 6 dígitos do seu app autenticador (Google Authenticator, Authy…).'),
+      h('div', { class: 'field' }, [h('label', {}, 'Código'), code]),
+      msg(), btn,
+      h('div', { class: 'switch-row' }, h('button', { class: 'linkbtn', onclick: () => { twofaStep = null; paint(); } }, 'Voltar')),
+    ];
+  }
   function span(html, cls) { const s = h('span', cls ? { class: cls } : {}); s.innerHTML = html; return s; }
-  function view() { return ({ login: loginView, register: registerView, forgot: forgotView, reset: resetView }[mode])(); }
+  function view() {
+    if (twofaStep) return twofaView();
+    return ({ login: loginView, register: registerView, forgot: forgotView, reset: resetView }[mode])();
+  }
   function go(m) { mode = m; paint(); }
   function paint() {
     root.innerHTML = '';

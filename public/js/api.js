@@ -29,7 +29,12 @@ export const api = {
   checkAccess: (payload) => request('POST', '/api/auth/check-access', payload),
   register: (payload) => request('POST', '/api/auth/register', payload),
   login: (payload) => request('POST', '/api/auth/login', payload),
+  login2fa: (ticket, code) => request('POST', '/api/auth/login/2fa', { ticket, code }),
   logout: () => request('POST', '/api/auth/logout'),
+  twofaStatus: () => request('GET', '/api/auth/2fa/status'),
+  twofaSetup: () => request('POST', '/api/auth/2fa/setup'),
+  twofaEnable: (code) => request('POST', '/api/auth/2fa/enable', { code }),
+  twofaDisable: (code) => request('POST', '/api/auth/2fa/disable', { code }),
   forgot: (email) => request('POST', '/api/auth/forgot', { email }),
   reset: (token, password) => request('POST', '/api/auth/reset', { token, password }),
 

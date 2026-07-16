@@ -2,29 +2,23 @@ import { api } from '../api.js';
 import { h, toast, openModal, fmtDateBR } from '../ui.js';
 import { icon } from '../icons.js';
 import { isValidWeek } from '../util.js';
-
-// Paleta de categorias por cor (a cliente escolhe; os nomes são sugestões).
-const CATEGORIES = [
-  { color: '#c98a8a', label: 'Pessoal' },
-  { color: '#7d94b0', label: 'Profissional' },
-  { color: '#8aa17d', label: 'Família' },
-  { color: '#a58ab0', label: 'Particular' },
-  { color: '#c9a15f', label: 'Ideias' },
-];
-const labelFor = (hex) => (CATEGORIES.find((c) => c.color === hex) || {}).label || '';
+import { loadLegend, labelFor, palette, openLegendEditor } from '../legend.js';
 
 export async function notesView(nav) {
   const filter = { kind: '', q: '' };
+  await loadLegend();
   const wrap = h('div', {});
   const newBtn = h('button', { class: 'btn sm' });
   newBtn.innerHTML = icon('plus', 18) + ' Nova anotação';
   newBtn.onclick = () => editor(null);
+  const legendBtn = h('button', { class: 'btn ghost sm' }, 'Legenda de cores');
+  legendBtn.onclick = () => openLegendEditor(() => refresh());
   wrap.append(h('div', { class: 'page-h', style: 'display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap' }, [
     h('div', {}, [
       h('h1', { class: 'display' }, 'Anotações'),
       h('div', { class: 'sub' }, 'Registre pensamentos diários, semanais ou livres. Organize por cor e marque o que já resolveu.'),
     ]),
-    newBtn,
+    h('div', { style: 'display:flex;gap:8px' }, [legendBtn, newBtn]),
   ]));
 
   const search = h('input', { type: 'search', placeholder: 'Buscar nas anotações…' });
@@ -89,10 +83,10 @@ export async function notesView(nav) {
       const none = h('button', { class: 'swatch none' + (color === null ? ' sel' : ''), title: 'Sem cor' }, '∅');
       none.onclick = () => { color = null; paintSwatches(); };
       swatches.append(none);
-      for (const c of CATEGORIES) {
-        const s = h('button', { class: 'swatch' + (color === c.color ? ' sel' : ''), title: c.label });
-        s.style.background = c.color;
-        s.onclick = () => { color = c.color; paintSwatches(); };
+      for (const c of palette()) {
+        const s = h('button', { class: 'swatch' + (color === c ? ' sel' : ''), title: labelFor(c) || 'Cor' });
+        s.style.background = c;
+        s.onclick = () => { color = c; paintSwatches(); };
         swatches.append(s);
       }
     }

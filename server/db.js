@@ -57,6 +57,24 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_photos_user_week ON photos(user_id, week);
 
+  CREATE TABLE IF NOT EXISTS payments (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title       TEXT NOT NULL,
+    position    INTEGER DEFAULT 0,
+    created_at  TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS payment_checks (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    payment_id  INTEGER NOT NULL REFERENCES payments(id) ON DELETE CASCADE,
+    ym          TEXT NOT NULL,                     -- 'YYYY-MM'
+    created_at  TEXT DEFAULT (datetime('now')),
+    UNIQUE(payment_id, ym)
+  );
+  CREATE INDEX IF NOT EXISTS idx_pay_user ON payments(user_id, position);
+  CREATE INDEX IF NOT EXISTS idx_paychk ON payment_checks(user_id, ym);
+
   CREATE TABLE IF NOT EXISTS content (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     section     TEXT NOT NULL DEFAULT 'papernow',  -- 'papernow' | 'marilia'
@@ -95,6 +113,7 @@ addColumn('notes', 'done', 'done INTEGER DEFAULT 0'); // marcar como resolvida
 addColumn('users', 'motto', 'motto TEXT');          // frase de inspiração personalizada
 addColumn('users', 'totp_secret', 'totp_secret TEXT');       // 2FA
 addColumn('users', 'totp_enabled', 'totp_enabled INTEGER DEFAULT 0');
+addColumn('users', 'color_legend', 'color_legend TEXT');    // legenda de cores personalizada (JSON)
 
 // Migração única: criptografa dados sensíveis já existentes (idempotente).
 function encryptExisting(table, columns) {

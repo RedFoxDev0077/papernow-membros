@@ -7,13 +7,14 @@ import { notesView } from './views/notes.js';
 import { profileView } from './views/profile.js';
 import { contentView } from './views/content.js';
 import { retrospectivaView } from './views/retrospectiva.js';
+import { paymentsView } from './views/payments.js';
 
 const NAV = [
   { id: 'inicio', label: 'Início', icon: 'home' },
-  { id: 'semana', label: 'Semana atual', icon: 'week' },
   { id: 'calendario', label: 'Calendário', icon: 'calendar' },
   { id: 'foto', label: 'Enviar foto da semana', icon: 'camera' },
   { id: 'anotacoes', label: 'Anotações', icon: 'note' },
+  { id: 'pagamentos', label: 'Pagamentos', icon: 'wallet' },
   { id: 'biblioteca', label: 'Biblioteca', icon: 'book' },
   { id: 'marilia', label: 'Marília Cordeiro', icon: 'heartcontent' },
   { id: 'retrospectiva', label: 'Retrospectiva', icon: 'spark' },
@@ -94,6 +95,7 @@ export function renderApp(root, user, onLogout) {
       case 'inicio': setActive('inicio'); return renderPage(() => dashboardView(nav));
       case 'calendario': setActive('calendario'); return renderPage(() => calendarView(nav));
       case 'anotacoes': setActive('anotacoes'); return renderPage(() => notesView(nav));
+      case 'pagamentos': setActive('pagamentos'); return renderPage(() => paymentsView());
       case 'perfil': setActive('perfil'); return renderPage(() => profileView(nav, onLogout));
       case 'semana':
       case 'foto': {

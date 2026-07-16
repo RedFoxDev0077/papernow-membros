@@ -55,4 +55,10 @@ export const api = {
   setMotto: (motto) => request('PUT', '/api/dashboard/motto', { motto }),
   content: (section) => request('GET', `/api/content?section=${section}`),
   retrospectiva: () => request('GET', '/api/retrospectiva'),
+  getLegend: () => request('GET', '/api/legend'),
+  setLegend: (legend) => request('PUT', '/api/legend', { legend }),
+  payments: (ym) => request('GET', `/api/payments?ym=${ym}`),
+  addPayment: (title) => request('POST', '/api/payments', { title }),
+  deletePayment: (id) => request('DELETE', `/api/payments/${id}`),
+  checkPayment: (id, ym, paid) => request('PUT', `/api/payments/${id}/check`, { ym, paid }),
 };

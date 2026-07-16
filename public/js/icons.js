@@ -27,6 +27,7 @@ const P = {
   plane: '<path d="M4 13.5l16-6-6 16-2.5-6.5L4 13.5Z"/>',
   clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  wallet: '<rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 9.5h18M16.5 13.5h1.5"/><path d="M3 8V7a2 2 0 0 1 2-2h11"/>',
 };
 
 export function icon(name, size = 20) {

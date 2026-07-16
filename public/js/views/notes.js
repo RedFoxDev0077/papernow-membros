@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { h, toast, openModal, fmtDateBR } from '../ui.js';
 import { icon } from '../icons.js';
 import { isValidWeek } from '../util.js';
-import { loadLegend, labelFor, palette, openLegendEditor } from '../legend.js';
+import { loadLegend, labelFor, palette, openLegendEditor, legendBar } from '../legend.js';
 
 export async function notesView(nav) {
   const filter = { kind: '', q: '' };
@@ -20,6 +20,8 @@ export async function notesView(nav) {
     ]),
     h('div', { style: 'display:flex;gap:8px' }, [legendBtn, newBtn]),
   ]));
+  const legend = legendBar(() => openLegendEditor(() => { legend._repaint(); refresh(); }));
+  wrap.append(legend);
 
   const search = h('input', { type: 'search', placeholder: 'Buscar nas anotações…' });
   let dbnc; search.oninput = () => { clearTimeout(dbnc); dbnc = setTimeout(() => { filter.q = search.value; refresh(); }, 250); };

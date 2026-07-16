@@ -28,7 +28,7 @@ router.put('/legend', (req, res) => {
 // ---- Pagamentos do mês (lista + check, sem cálculos) ----
 router.get('/payments', (req, res) => {
   const ym = /^\d{4}-\d{2}$/.test(req.query.ym) ? req.query.ym : new Date().toISOString().slice(0, 7);
-  const items = db.prepare('SELECT id, title, position FROM payments WHERE user_id = ? ORDER BY position ASC, id ASC').all(req.user.uid);
+  const items = db.prepare('SELECT id, title, amount, position FROM payments WHERE user_id = ? ORDER BY position ASC, id ASC').all(req.user.uid);
   const paid = new Set(db.prepare('SELECT payment_id FROM payment_checks WHERE user_id = ? AND ym = ?').all(req.user.uid, ym).map((r) => r.payment_id));
   res.json({ ym, items: items.map((i) => ({ ...i, paid: paid.has(i.id) })) });
 });
@@ -36,9 +36,20 @@ router.get('/payments', (req, res) => {
 router.post('/payments', (req, res) => {
   const title = String(req.body.title || '').trim().slice(0, 80);
   if (!title) return res.status(400).json({ error: 'Informe o nome do pagamento.' });
+  const amount = String(req.body.amount || '').trim().slice(0, 30) || null;
   const pos = db.prepare('SELECT COALESCE(MAX(position),0)+1 AS p FROM payments WHERE user_id = ?').get(req.user.uid).p;
-  const info = db.prepare('INSERT INTO payments (user_id, title, position) VALUES (?, ?, ?)').run(req.user.uid, title, pos);
-  res.status(201).json({ item: { id: info.lastInsertRowid, title, position: pos, paid: false } });
+  const info = db.prepare('INSERT INTO payments (user_id, title, amount, position) VALUES (?, ?, ?, ?)').run(req.user.uid, title, amount, pos);
+  res.status(201).json({ item: { id: info.lastInsertRowid, title, amount, position: pos, paid: false } });
+});
+
+// PUT /api/payments/:id  { title, amount }
+router.put('/payments/:id', (req, res) => {
+  const item = db.prepare('SELECT * FROM payments WHERE id = ? AND user_id = ?').get(req.params.id, req.user.uid);
+  if (!item) return res.status(404).json({ error: 'Pagamento não encontrado.' });
+  const title = req.body.title != null ? String(req.body.title).trim().slice(0, 80) || item.title : item.title;
+  const amount = req.body.amount !== undefined ? (String(req.body.amount).trim().slice(0, 30) || null) : item.amount;
+  db.prepare('UPDATE payments SET title = ?, amount = ? WHERE id = ?').run(title, amount, item.id);
+  res.json({ ok: true, item: { id: item.id, title, amount } });
 });
 
 router.delete('/payments/:id', (req, res) => {

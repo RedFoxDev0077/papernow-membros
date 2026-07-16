@@ -57,6 +57,18 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_photos_user_week ON photos(user_id, week);
 
+  CREATE TABLE IF NOT EXISTS agenda (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    event_date  TEXT NOT NULL,                     -- 'YYYY-MM-DD'
+    title       TEXT NOT NULL,                     -- criptografado
+    color       TEXT,
+    done        INTEGER DEFAULT 0,
+    position    INTEGER DEFAULT 0,
+    created_at  TEXT DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_agenda_user_date ON agenda(user_id, event_date);
+
   CREATE TABLE IF NOT EXISTS payments (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -114,6 +126,7 @@ addColumn('users', 'motto', 'motto TEXT');          // frase de inspiração per
 addColumn('users', 'totp_secret', 'totp_secret TEXT');       // 2FA
 addColumn('users', 'totp_enabled', 'totp_enabled INTEGER DEFAULT 0');
 addColumn('users', 'color_legend', 'color_legend TEXT');    // legenda de cores personalizada (JSON)
+addColumn('payments', 'amount', 'amount TEXT');            // valor do pagamento (texto livre, sem cálculo)
 
 // Migração única: criptografa dados sensíveis já existentes (idempotente).
 function encryptExisting(table, columns) {

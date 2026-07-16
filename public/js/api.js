@@ -58,7 +58,12 @@ export const api = {
   getLegend: () => request('GET', '/api/legend'),
   setLegend: (legend) => request('PUT', '/api/legend', { legend }),
   payments: (ym) => request('GET', `/api/payments?ym=${ym}`),
-  addPayment: (title) => request('POST', '/api/payments', { title }),
+  addPayment: (title, amount) => request('POST', '/api/payments', { title, amount }),
+  updatePayment: (id, data) => request('PUT', `/api/payments/${id}`, data),
   deletePayment: (id) => request('DELETE', `/api/payments/${id}`),
   checkPayment: (id, ym, paid) => request('PUT', `/api/payments/${id}/check`, { ym, paid }),
+  agenda: (params = {}) => { const q = new URLSearchParams(Object.entries(params).filter(([, v]) => v)).toString(); return request('GET', `/api/agenda${q ? `?${q}` : ''}`); },
+  addEvent: (e) => request('POST', '/api/agenda', e),
+  updateEvent: (id, e) => request('PUT', `/api/agenda/${id}`, e),
+  deleteEvent: (id) => request('DELETE', `/api/agenda/${id}`),
 };

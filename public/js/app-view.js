@@ -76,15 +76,18 @@ export function renderApp(root, user, onLogout) {
     Object.entries(navButtons).forEach(([k, b]) => b.classList.toggle('active', k === id));
   }
 
+  let renderSeq = 0;
   async function renderPage(fn) {
+    const seq = ++renderSeq; // só a renderização mais recente escreve no DOM
     content.innerHTML = '';
-    const loading = h('div', { class: 'empty' }, 'Carregando…');
-    content.append(loading);
+    content.append(h('div', { class: 'empty' }, 'Carregando…'));
     try {
       const node = await fn();
+      if (seq !== renderSeq) return; // navegou de novo enquanto carregava — descarta
       content.innerHTML = ''; content.append(node);
-      content.scrollTo?.(0, 0); window.scrollTo(0, 0);
+      window.scrollTo(0, 0);
     } catch (e) {
+      if (seq !== renderSeq) return;
       content.innerHTML = '';
       content.append(h('div', { class: 'empty' }, [h('div', { class: 'big' }, '⚠️'), h('p', {}, e.message || 'Erro ao carregar.')]));
     }

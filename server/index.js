@@ -13,6 +13,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import contentRoutes from './routes/content.js';
 import retrospectivaRoutes from './routes/retrospectiva.js';
 import extrasRoutes from './routes/extras.js';
+import agendaRoutes from './routes/agenda.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -45,6 +46,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/content', contentRoutes);
 app.use('/api/retrospectiva', retrospectivaRoutes);
 app.use('/api', extrasRoutes);
+app.use('/api/agenda', agendaRoutes);
 
 // Fotos das clientes (privadas por pasta de usuário; servidas com cache curto)
 app.use('/uploads', express.static(config.paths.uploads, { maxAge: '1h', index: false }));

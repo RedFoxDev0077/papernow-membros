@@ -16,6 +16,24 @@ export function labelFor(color) {
 
 export function palette() { return (cache && cache.palette) || []; }
 
+// Barra de legenda fixa e visível (cores + significados).
+export function legendBar(onEdit) {
+  const bar = h('div', { class: 'legend-bar' });
+  function paint() {
+    bar.innerHTML = '';
+    for (const c of palette()) {
+      const name = labelFor(c);
+      if (!name) continue;
+      const dot = h('span', { class: 'lg-dot' }); dot.style.background = c;
+      bar.append(h('span', { class: 'lg-chip' }, [dot, name]));
+    }
+    if (onEdit) { const e = h('button', { class: 'lg-edit' }, 'editar'); e.onclick = () => onEdit(); bar.append(e); }
+  }
+  paint();
+  bar._repaint = paint;
+  return bar;
+}
+
 // Editor da legenda: a cliente dá nome a cada cor.
 export async function openLegendEditor(onSaved) {
   const data = await loadLegend(true);

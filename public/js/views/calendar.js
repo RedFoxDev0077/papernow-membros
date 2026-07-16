@@ -1,26 +1,130 @@
 import { api } from '../api.js';
-import { h, toast, openLightbox } from '../ui.js';
+import { h, toast, openLightbox, openModal } from '../ui.js';
 import { icon } from '../icons.js';
 
 function spanIcon(name, size = 20) { const s = h('span', {}); s.style.display = 'inline-flex'; s.innerHTML = icon(name, size); return s; }
+
+const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const DIAS = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'];
+const pad = (n) => String(n).padStart(2, '0');
+const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 
 export async function calendarView(nav) {
   const cal = await api.calendar();
   const currentWeek = await nav.currentWeek();
   const byWeek = Object.fromEntries(cal.weeks.map((w) => [w.week, w]));
   let monthIndex = Math.max(0, cal.months.findIndex((m) => m.weeks.some((w) => w.week === currentWeek)));
-  let mode = 'grid'; // 'grid' | 'gallery'
+  let mode = 'mes'; // 'mes' | 'grid' (semanas) | 'gallery'
+  const now = new Date();
+  let gY = now.getFullYear(), gM = now.getMonth();
 
   const wrap = h('div', {});
   wrap.append(h('div', { class: 'page-h' }, [
-    h('h1', { class: 'display' }, `Calendário Papernow ${cal.year}`),
-    h('div', { class: 'sub' }, `Suas ${cal.weeks.length} semanas, espelhando o seu planner físico. Toque numa semana para adicionar fotos e ver as anotações.`),
+    h('h1', { class: 'display' }, 'Calendário'),
+    h('div', { class: 'sub' }, 'Escreva no dia como no seu planner. Toque num dia para abrir e anotar.'),
   ]));
+
+  // Alternância Mês / Semanas
+  const toggle = h('div', { class: 'cal-toggle' });
+  function paintToggle() {
+    toggle.innerHTML = '';
+    [['mes', 'Mês'], ['grid', 'Semanas']].forEach(([m, label]) => {
+      const b = h('button', { class: 'chip' + (mode === m ? ' active' : '') }, label);
+      b.onclick = () => { mode = m; render(); };
+      toggle.append(b);
+    });
+  }
+  wrap.append(toggle);
 
   const body = h('div', {});
   wrap.append(body);
 
-  function render() { body.innerHTML = ''; body.append(mode === 'grid' ? gridView() : galleryView()); }
+  function render() {
+    paintToggle();
+    body.innerHTML = '';
+    body.append(mode === 'mes' ? monthView() : mode === 'gallery' ? galleryView() : gridView());
+  }
+
+  // ---- Visão do MÊS (calendário para escrever) ----
+  function monthView() {
+    const container = h('div', {});
+    const prev = h('button', { class: 'btn ghost sm' }); prev.innerHTML = icon('chevronL', 18) + ' Anterior';
+    prev.onclick = () => { gM--; if (gM < 0) { gM = 11; gY--; } render(); };
+    const next = h('button', { class: 'btn ghost sm' }); next.innerHTML = 'Próximo ' + icon('chevronR', 18);
+    next.onclick = () => { gM++; if (gM > 11) { gM = 0; gY++; } render(); };
+    container.append(h('div', { class: 'month-nav' }, [prev, h('div', { class: 'm-name' }, `${MESES[gM]} de ${gY}`), next]));
+
+    const weekdays = h('div', { class: 'month-weekdays' }, DIAS.map((d) => h('div', {}, d)));
+    const cells = h('div', { class: 'month-cells' });
+    const firstDow = (new Date(gY, gM, 1).getDay() + 6) % 7; // segunda = 0
+    const daysInMonth = new Date(gY, gM + 1, 0).getDate();
+    for (let i = 0; i < firstDow; i++) cells.append(h('div', { class: 'day-cell blank' }));
+    for (let d = 1; d <= daysInMonth; d++) {
+      const iso = `${gY}-${pad(gM + 1)}-${pad(d)}`;
+      const cell = h('button', { class: 'day-cell' + (iso === todayISO() ? ' today' : '') }, [
+        h('div', { class: 'dn' }, String(d)),
+        h('div', { class: 'dtext' }),
+      ]);
+      cell.dataset.date = iso;
+      cell.onclick = () => openDayEditor(iso);
+      cells.append(cell);
+    }
+    container.append(h('div', { class: 'month-cal' }, [weekdays, cells]));
+
+    // Carrega as anotações diárias do mês e preenche os dias
+    (async () => {
+      const first = `${gY}-${pad(gM + 1)}-01`;
+      const last = `${gY}-${pad(gM + 1)}-${pad(daysInMonth)}`;
+      const { notes } = await api.notes({ kind: 'diaria', from: first, to: last });
+      dayNotes = {};
+      for (const n of notes) { if (n.note_date && !dayNotes[n.note_date]) dayNotes[n.note_date] = n; }
+      cells.querySelectorAll('.day-cell:not(.blank)').forEach((cell) => {
+        const n = dayNotes[cell.dataset.date];
+        if (n) {
+          cell.classList.add('has');
+          cell.querySelector('.dtext').textContent = n.title || n.body || '';
+          if (n.color) cell.style.setProperty('--dc', n.color);
+        }
+      });
+    })();
+    return container;
+  }
+
+  let dayNotes = {};
+  function openDayEditor(iso) {
+    const existing = dayNotes[iso] || null;
+    const [y, m, d] = iso.split('-');
+    const title = h('input', { type: 'text', placeholder: 'Título (opcional)', value: existing?.title || '' });
+    const text = h('textarea', { rows: '7', placeholder: 'Escreva o seu dia…' }, existing?.body || '');
+    let color = existing?.color || null;
+    const swatches = h('div', { class: 'swatches' });
+    const CATS = [['#c98a8a', 'Pessoal'], ['#7d94b0', 'Profissional'], ['#8aa17d', 'Família'], ['#a58ab0', 'Particular'], ['#c9a15f', 'Ideias']];
+    function paintSw() {
+      swatches.innerHTML = '';
+      const none = h('button', { class: 'swatch none' + (color === null ? ' sel' : '') }, '∅');
+      none.onclick = () => { color = null; paintSw(); };
+      swatches.append(none);
+      for (const [c, label] of CATS) { const s = h('button', { class: 'swatch' + (color === c ? ' sel' : ''), title: label }); s.style.background = c; s.onclick = () => { color = c; paintSw(); }; swatches.append(s); }
+    }
+    paintSw();
+    const save = h('button', { class: 'btn sm' }, 'Salvar');
+    const del = existing ? h('button', { class: 'btn sm danger' }, 'Apagar') : null;
+    const modal = openModal(h('div', {}, [
+      h('h2', { class: 'display' }, `${d}/${m}/${y}`),
+      h('div', { class: 'field' }, [h('label', {}, 'Título'), title]),
+      h('div', { class: 'field' }, [h('label', {}, 'Anotação do dia'), text]),
+      h('div', { class: 'field' }, [h('label', {}, 'Cor'), swatches]),
+      h('div', { style: 'display:flex;gap:10px;justify-content:flex-end;margin-top:4px' }, [del, save].filter(Boolean)),
+    ]));
+    save.onclick = async () => {
+      const payload = { kind: 'diaria', note_date: iso, title: title.value, body: text.value, color };
+      try {
+        if (existing) await api.updateNote(existing.id, payload); else await api.createNote(payload);
+        modal.close(); toast('Dia salvo ✨'); render();
+      } catch (e) { toast(e.message, true); }
+    };
+    if (del) del.onclick = async () => { if (!confirm('Apagar a anotação deste dia?')) return; await api.deleteNote(existing.id); modal.close(); toast('Apagado.'); render(); };
+  }
 
   function gridView() {
     const month = cal.months[monthIndex];

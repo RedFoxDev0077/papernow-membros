@@ -239,6 +239,31 @@ img { max-width: 100%; }
 .mini-item .m { font-size: 12.5px; color: var(--ink-faint); }
 .empty-soft { color: var(--ink-faint); font-size: 13.5px; text-align: center; padding: 22px 8px; }
 
+/* ===== Month calendar (escrever no dia) ===== */
+.cal-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
+.month-cal { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; box-shadow: var(--shadow-sm); }
+.month-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 8px; }
+.month-weekdays > div { text-align: center; font-size: 11px; letter-spacing: .5px; color: var(--ink-faint); font-weight: 600; }
+.month-cells { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.day-cell { --dc: transparent; aspect-ratio: 1; min-height: 74px; background: var(--paper); border: 1px solid var(--line);
+  border-left: 4px solid var(--dc); border-radius: 12px; padding: 8px; text-align: left; cursor: pointer;
+  display: flex; flex-direction: column; gap: 4px; transition: transform .1s, box-shadow .1s, border-color .1s; overflow: hidden; }
+.day-cell:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); border-color: var(--terra-soft); }
+.day-cell.blank { background: transparent; border: none; cursor: default; }
+.day-cell .dn { font-family: var(--display); font-size: 16px; color: var(--ink); font-weight: 600; }
+.day-cell.today .dn { color: #fff; background: var(--terra); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; }
+.day-cell .dtext { font-size: 11.5px; color: var(--ink-soft); line-height: 1.3; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.day-cell.has { background: var(--card); }
+@media (max-width: 620px) {
+  .month-cells { gap: 5px; }
+  .day-cell { min-height: 56px; padding: 5px; border-left-width: 3px; }
+  .day-cell .dn { font-size: 13px; }
+  .day-cell .dtext { -webkit-line-clamp: 2; font-size: 10px; }
+  .month-weekdays { gap: 5px; }
+  .month-weekdays > div { font-size: 9.5px; }
+}
+
 /* ===== Calendar ===== */
 .month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .month-nav .m-name { font-family: var(--display); font-size: 22px; color: var(--terra-dark); }

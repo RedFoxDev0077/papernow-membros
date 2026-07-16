@@ -23,6 +23,8 @@ router.get('/', (req, res) => {
   if (req.query.kind && KINDS.has(req.query.kind)) { clauses.push('kind = ?'); params.push(req.query.kind); }
   if (req.query.week && isValidWeek(Number(req.query.week))) { clauses.push('week = ?'); params.push(Number(req.query.week)); }
   if (req.query.date) { clauses.push('note_date = ?'); params.push(String(req.query.date)); }
+  if (req.query.from) { clauses.push('note_date >= ?'); params.push(String(req.query.from)); }
+  if (req.query.to) { clauses.push('note_date <= ?'); params.push(String(req.query.to)); }
 
   const rows = db
     .prepare(`SELECT id, kind, title, body, note_date, week, color, done, created_at, updated_at

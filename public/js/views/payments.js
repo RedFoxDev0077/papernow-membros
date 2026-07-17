@@ -6,9 +6,8 @@ const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julh
 const pad = (n) => String(n).padStart(2, '0');
 
 export async function paymentsView() {
-  const cal = await api.calendar().catch(() => ({ year: new Date().getFullYear() }));
   const now = new Date();
-  let y = cal.year, m = now.getMonth(); // padronizado no ano do produto (2027)
+  let y = now.getFullYear(), m = now.getMonth(); // mês real (para acompanhar as contas)
   const wrap = h('div', {});
   wrap.append(h('div', { class: 'page-h' }, [
     h('h1', { class: 'display' }, 'Pagamentos do mês'),
@@ -41,6 +40,7 @@ export async function paymentsView() {
   }
 
   function editItem(it) {
+    if (document.querySelector('.modal-back')) return; // evita abrir dois de uma vez
     const t = h('input', { type: 'text', value: it.title, maxlength: '80' });
     const a = h('input', { type: 'text', value: it.amount || '', placeholder: 'Valor', maxlength: '30' });
     const save = h('button', { class: 'btn sm' }, 'Salvar');

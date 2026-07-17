@@ -19,9 +19,16 @@ export async function calendarView(nav) {
   let mode = 'mes'; // 'mes' | 'grid' (semanas) | 'gallery'
   await loadLegend();
   const now = new Date();
-  // Ano do produto (2027) para padronizar todas as telas; abre no mês atual.
-  let gY = cal.year, gM = now.getMonth();
-  const todayIn = (y) => `${y}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  // O calendário cobre de Julho do ano anterior até Dezembro do ano do planner
+  // (ex.: Julho/2026 → Dezembro/2027), pra cliente se familiarizar antes.
+  const startY = cal.year - 1, startM = 6;   // Julho
+  const endY = cal.year, endM = 11;          // Dezembro
+  const before = (y, m) => y < startY || (y === startY && m < startM);
+  const after = (y, m) => y > endY || (y === endY && m > endM);
+  let gY = now.getFullYear(), gM = now.getMonth();
+  if (before(gY, gM)) { gY = startY; gM = startM; }
+  if (after(gY, gM)) { gY = endY; gM = endM; }
+  const realTodayISO = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
   const wrap = h('div', {});
   wrap.append(h('div', { class: 'page-h' }, [
@@ -56,10 +63,12 @@ export async function calendarView(nav) {
   // ---- Visão do MÊS (agenda) ----
   function monthView() {
     const container = h('div', {});
-    const prev = h('button', { class: 'btn ghost sm' }); prev.innerHTML = icon('chevronL', 18) + ' Anterior';
-    prev.onclick = () => { gM--; if (gM < 0) { gM = 11; gY--; } render(); };
-    const next = h('button', { class: 'btn ghost sm' }); next.innerHTML = 'Próximo ' + icon('chevronR', 18);
-    next.onclick = () => { gM++; if (gM > 11) { gM = 0; gY++; } render(); };
+    const atStart = gY === startY && gM === startM;
+    const atEnd = gY === endY && gM === endM;
+    const prev = h('button', { class: 'btn ghost sm', disabled: atStart ? '' : false }); prev.innerHTML = icon('chevronL', 18) + ' Anterior';
+    prev.onclick = () => { if (atStart) return; gM--; if (gM < 0) { gM = 11; gY--; } render(); };
+    const next = h('button', { class: 'btn ghost sm', disabled: atEnd ? '' : false }); next.innerHTML = 'Próximo ' + icon('chevronR', 18);
+    next.onclick = () => { if (atEnd) return; gM++; if (gM > 11) { gM = 0; gY++; } render(); };
     container.append(h('div', { class: 'month-nav' }, [prev, h('div', { class: 'm-name' }, `${MESES[gM]} de ${gY}`), next]));
 
     const holidays = holidaysFor(gY);
@@ -67,7 +76,7 @@ export async function calendarView(nav) {
     const cells = h('div', { class: 'month-cells' });
     const firstDow = (new Date(gY, gM, 1).getDay() + 6) % 7; // segunda = 0
     const daysInMonth = new Date(gY, gM + 1, 0).getDate();
-    const today = todayIn(gY);
+    const today = realTodayISO;
     for (let i = 0; i < firstDow; i++) cells.append(h('div', { class: 'day-cell blank' }));
     for (let d = 1; d <= daysInMonth; d++) {
       const iso = `${gY}-${pad(gM + 1)}-${pad(d)}`;

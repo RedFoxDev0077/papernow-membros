@@ -12,6 +12,20 @@ entrega o núcleo do produto como **PWA** (instalável no celular, com notifica�
 
 > Funcionalidade-assinatura: a conexão entre o planner físico e o digital (foto da semana → semana certa do calendário).
 
+## Entre Nós (página pública)
+
+O mesmo app serve a página **Entre Nós** (`entrenos.papernow.com.br`, ou `/entrenos` em
+qualquer domínio): conteúdo exclusivo, parceira em destaque, downloads, clube de
+benefícios, vídeos e produtos da loja — tudo hospedado aqui, sem Google Drive.
+
+- Gestão pelo painel `/admin` (aba **Entre Nós**): itens com capa obrigatória, materiais
+  (PDF/vídeo até 300MB), ordem, ocultar/mostrar, textos das seções, parceira e logo.
+- Página montada no servidor (`server/entrenos-page.js`); visual em
+  `public/entrenos/entrenos.css` — a cor de ação é a variável `--cor-acao`.
+- Arquivos em `data/entrenos/` (entram no mesmo backup da pasta `data/`).
+- Links externos são guardados e abertos exatamente como cadastrados (afiliadas).
+- Carga inicial: `node server/seed-entrenos.js <pasta-com-manifest.json>`.
+
 ## Stack
 
 | Camada | Tecnologia | Por quê |

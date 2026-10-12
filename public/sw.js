@@ -1,5 +1,5 @@
 // Service Worker — Papernow Área de Membros (PWA Fase 1)
-const CACHE = 'papernow-v12';
+const CACHE = 'papernow-v13';
 const UPLOADS_CACHE = 'papernow-uploads-v1';
 const APP_SHELL = [
   '/',
@@ -50,6 +50,9 @@ self.addEventListener('fetch', (e) => {
 
   // API: sempre rede (dados sempre atualizados).
   if (url.pathname.startsWith('/api')) return;
+
+  // Painel e página Entre Nós: sempre rede (mudanças do painel aparecem na hora).
+  if (url.pathname.startsWith('/admin') || url.pathname.startsWith('/entrenos')) return;
 
   // Fotos das clientes: cache-first (a foto não muda depois de enviada),
   // então elas aparecem instantâneas e também funcionam offline.

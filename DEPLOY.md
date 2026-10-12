@@ -196,3 +196,16 @@ ssh-keygen -t ed25519 -C "github-actions" -f ci_deploy -N ""
 
 Depois disso, todo `git push` na `main` publica na VPS automaticamente. Acompanhe em
 **GitHub → Actions**.
+
+## 12. Domínio do Entre Nós
+
+A página Entre Nós roda neste mesmo app. Para o domínio próprio:
+
+1. DNS: registros **A** `entrenos` e `www.entrenos` → IP da VPS (sem proxy/CDN na frente,
+   para o certificado ser emitido aqui).
+2. Nginx: `deploy/nginx-entrenos.conf` em `/etc/nginx/sites-available/entrenos` (+ link em
+   `sites-enabled`), `nginx -t && systemctl reload nginx`.
+3. SSL: `certbot --nginx -d entrenos.papernow.com.br -d www.entrenos.papernow.com.br`.
+
+Antes da troca de DNS a página pode ser conferida em
+`https://areamembros.papernow.com.br/entrenos`.

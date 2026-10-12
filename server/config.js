@@ -22,11 +22,15 @@ export const config = {
   encryptionKey: process.env.ENCRYPTION_KEY && /^[0-9a-fA-F]{64}$/.test(process.env.ENCRYPTION_KEY)
     ? Buffer.from(process.env.ENCRYPTION_KEY, 'hex')
     : crypto.scryptSync(process.env.JWT_SECRET || 'dev-secret-change-me', 'papernow-data-enc', 32),
+  // Domínios que servem a página pública "Entre Nós" na raiz (o resto do app segue igual).
+  entrenosHosts: (process.env.ENTRENOS_HOSTS || 'entrenos.papernow.com.br,www.entrenos.papernow.com.br')
+    .split(',').map((h) => h.trim().toLowerCase()).filter(Boolean),
   paths: {
     root,
     data: path.join(root, 'data'),
     uploads: path.join(root, 'data', 'uploads'),
     content: path.join(root, 'data', 'content'),
+    entrenos: path.join(root, 'data', 'entrenos'),
     db: path.join(root, 'data', 'papernow.db'),
     public: path.join(root, 'public'),
   },

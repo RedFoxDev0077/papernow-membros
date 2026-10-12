@@ -101,6 +101,29 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_content_section ON content(section, position, created_at);
 
+  -- Página pública "Entre Nós": itens das seções (geridos pelo painel /admin).
+  CREATE TABLE IF NOT EXISTS entrenos_items (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    section     TEXT NOT NULL,                     -- 'conteudo' | 'downloads' | 'beneficios' | 'videos' | 'loja'
+    title       TEXT NOT NULL,
+    subtitle    TEXT,                              -- descrição / benefício
+    image       TEXT,                              -- capa (arquivo em data/entrenos)
+    file        TEXT,                              -- material (arquivo em data/entrenos)
+    file_name   TEXT,                              -- nome original do material
+    file_type   TEXT,                              -- mimetype do material
+    url         TEXT,                              -- link externo (guardado exatamente como digitado)
+    coupon      TEXT,
+    active      INTEGER DEFAULT 1,
+    position    INTEGER DEFAULT 0,
+    hits        INTEGER DEFAULT 0,                 -- downloads/aberturas
+    created_at  TEXT DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_entrenos_section ON entrenos_items(section, position, id);
+  CREATE TABLE IF NOT EXISTS entrenos_settings (
+    key         TEXT PRIMARY KEY,
+    value       TEXT NOT NULL                      -- JSON
+  );
+
   CREATE TABLE IF NOT EXISTS notes (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

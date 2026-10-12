@@ -1,0 +1,18 @@
+{
+  "name": "Entre Nós · Papernow",
+  "short_name": "Entre Nós",
+  "description": "Conteúdo único, pensado só para você.",
+  "lang": "pt-BR",
+  "id": "/entrenos",
+  "start_url": "/entrenos",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FBF8F5",
+  "theme_color": "#B29B8B",
+  "icons": [
+    { "src": "/entrenos/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/entrenos/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/entrenos/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

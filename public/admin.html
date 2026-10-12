@@ -31,13 +31,35 @@
   .hidden{display:none}
   .toprow{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
   .empty{color:var(--soft);font-size:13.5px;text-align:center;padding:18px}
+  /* Abas e painel do Entre Nós */
+  .tabs{display:flex;gap:8px;justify-content:center;margin:0 0 18px;flex-wrap:wrap}
+  .tabs button,.chips button{background:#fff;color:var(--ink);border:1px solid var(--line);padding:9px 16px;font-size:14px;border-radius:999px;font-weight:600}
+  .tabs button.on,.chips button.on{background:var(--terra-d);border-color:var(--terra-d);color:#fff}
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+  .chips button{padding:7px 13px;font-size:13px}
+  .hint{font-size:12.5px;color:var(--soft);margin:5px 0 0;line-height:1.45}
+  .thumb{width:64px;height:48px;border-radius:8px;object-fit:cover;background:#efe6d6;flex:none;border:1px solid var(--line)}
+  .item .l{display:flex;align-items:center;gap:12px;min-width:0;flex:1}
+  .item .l>div{min-width:0}
+  .item .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .item .acts{display:flex;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+  .item.off .t{opacity:.5}
+  button.mini{padding:6px 10px;font-size:12.5px;background:#fff;color:var(--terra-d);border:1px solid var(--line)}
+  button.mini:hover{background:#f3ece0}
+  button:disabled{opacity:.55;cursor:default}
+  .bar{height:6px;background:#efe6d6;border-radius:6px;overflow:hidden;margin:8px 0}
+  .bar i{display:block;height:100%;width:0;background:var(--terra);transition:width .2s}
+  fieldset{border:1px solid var(--line);border-radius:12px;margin:16px 0 0;padding:4px 14px 14px}
+  legend{font-size:13px;font-weight:600;color:var(--terra-d);padding:0 6px}
+  .preview{max-width:100%;max-height:120px;border-radius:10px;border:1px solid var(--line);margin-top:8px;background:#b29b8b}
+  @media(max-width:560px){.row{flex-direction:column;gap:0}.item{flex-direction:column;align-items:stretch}.item .acts{justify-content:flex-start}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="brand"><img src="/img/papernow-logo.png" alt="Papernow"></div>
   <h1>Gestão de Conteúdo</h1>
-  <p class="sub">Adicione e organize os materiais da Biblioteca e da seção Marília Cordeiro.</p>
+  <p class="sub">Gerencie a página Entre Nós e os materiais da Área de Membros.</p>
 
   <!-- Login -->
   <div id="login" class="card">
@@ -49,8 +71,19 @@
 
   <!-- App -->
   <div id="app" class="hidden">
+    <div class="tabs">
+      <button id="tabEn" class="on">Entre Nós</button>
+      <button id="tabAm">Área de Membros</button>
+      <button class="ghost sm" id="logout">Sair</button>
+    </div>
+
+    <!-- Entre Nós (montado por /admin-entrenos.js) -->
+    <div id="paneEn"></div>
+
+    <!-- Área de Membros: Biblioteca e Marília -->
+    <div id="paneAm" class="hidden">
     <div class="card">
-      <div class="toprow"><b>Novo material</b><button class="ghost sm" id="logout">Sair</button></div>
+      <div class="toprow"><b>Novo material</b></div>
       <div class="row">
         <div><label>Seção</label>
           <select id="section"><option value="papernow">Biblioteca Papernow</option><option value="marilia">Marília Cordeiro</option></select>
@@ -74,14 +107,20 @@
       <b>Materiais publicados</b>
       <div id="list" style="margin-top:8px"><div class="empty">Carregando…</div></div>
     </div>
+    </div>
   </div>
 </div>
+
+<script src="/admin-entrenos.js?v=1"></script>
 
 <script>
 const $ = (id) => document.getElementById(id);
 let TOKEN = localStorage.getItem('pn_admin_token') || '';
 
-function show(app){ $('login').classList.toggle('hidden', app); $('app').classList.toggle('hidden', !app); }
+function show(app){ $('login').classList.toggle('hidden', app); $('app').classList.toggle('hidden', !app); if(app) EntreNosAdmin.init($('paneEn'), () => TOKEN, () => show(false)); }
+function tab(en){ $('paneEn').classList.toggle('hidden', !en); $('paneAm').classList.toggle('hidden', en); $('tabEn').classList.toggle('on', en); $('tabAm').classList.toggle('on', !en); }
+$('tabEn').onclick = () => tab(true);
+$('tabAm').onclick = () => tab(false);
 function headers(){ return { 'x-admin-token': TOKEN }; }
 
 async function checkToken(t){

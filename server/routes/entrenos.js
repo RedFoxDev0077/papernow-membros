@@ -39,6 +39,9 @@ const upload = multer({
   }),
   limits: { fileSize: MAX_FILE_MB * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
+    if (file.fieldname === 'ebook') {
+      return file.mimetype === 'application/pdf' ? cb(null, true) : cb(new Error('O ebook precisa ser um arquivo PDF.'));
+    }
     const isImageField = file.fieldname !== 'file';
     if (isImageField && !IMAGE_TYPES.test(file.mimetype)) return cb(new Error('A imagem precisa ser JPG, PNG ou WEBP.'));
     if (!isImageField && !FILE_EXT[file.mimetype]) return cb(new Error('Material não aceito. Envie PDF, vídeo (MP4/MOV), imagem ou ZIP.'));
@@ -46,7 +49,7 @@ const upload = multer({
   },
 });
 const itemUpload = upload.fields([{ name: 'image', maxCount: 1 }, { name: 'file', maxCount: 1 }]);
-const settingsUpload = upload.fields([{ name: 'partnerImage', maxCount: 1 }, { name: 'logo', maxCount: 1 }]);
+const settingsUpload = upload.fields([{ name: 'partnerImage', maxCount: 1 }, { name: 'logo', maxCount: 1 }, { name: 'ebook', maxCount: 1 }]);
 
 const rm = (file) => { if (file) fs.rm(file, { force: true }, () => {}); };
 const cleanupTmp = (req) => { for (const list of Object.values(req.files || {})) for (const f of list) rm(f.path); };
@@ -122,6 +125,17 @@ router.get('/file/:id', (req, res) => {
   res.setHeader('Content-Disposition',
     `${asDownload ? 'attachment' : 'inline'}; filename="material${ext}"; filename*=UTF-8''${encodeURIComponent(name)}`);
   res.sendFile(file, { headers: { 'Cache-Control': 'private, max-age=3600' } });
+});
+
+// GET /api/entrenos/ebook — download direto do ebook da parceira (aberto a quem acessa a página)
+router.get('/ebook', (req, res) => {
+  const { ebookFile, ebookTitle } = getSettings().partner;
+  const file = ebookFile && path.join(FILE_DIR, ebookFile);
+  if (!file || !fs.existsSync(file)) return res.status(404).send('Ebook indisponível.');
+  const name = `${String(ebookTitle || 'ebook').replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'ebook'}.pdf`;
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="ebook.pdf"; filename*=UTF-8''${encodeURIComponent(name)}`);
+  res.sendFile(file, { headers: { 'Cache-Control': 'no-cache' } });
 });
 
 // ---- Painel (admin) ----
@@ -244,7 +258,7 @@ router.put('/settings', requireAdmin, settingsUpload, async (req, res, next) => 
     try { input = JSON.parse(req.body.data || '{}'); } catch { /* ignora */ }
     const current = getSettings();
     const URL_KEYS = new Set(['primaryUrl', 'storeUrl', 'fullUrl', 'whatsappUrl']);
-    const FILE_KEYS = new Set(['image', 'logo']);
+    const FILE_KEYS = new Set(['image', 'logo', 'ebookFile']);
 
     // Só aceita chaves conhecidas (as do DEFAULTS); links passam intactos pelo cleanUrl.
     const merge = (def, cur, inp) => {
@@ -257,7 +271,7 @@ router.put('/settings', requireAdmin, settingsUpload, async (req, res, next) => 
           const raw = String(v ?? '').trim();
           if (raw && !cleanUrl(raw)) throw Object.assign(new Error('Os links precisam começar com https://'), { status: 400 });
           out[k] = cleanUrl(raw) || '';
-        } else out[k] = text(v, 600);
+        } else out[k] = k === 'cardText' ? String(v ?? '').trim().slice(0, 2000) : text(v, 600);
       }
       return out;
     };
@@ -275,6 +289,15 @@ router.put('/settings', requireAdmin, settingsUpload, async (req, res, next) => 
       next_.partner.image = await storeImage(partnerImage.path, { maxWidth: 2000 });
       rm(partnerImage.path); rm(current.partner.image && path.join(IMG_DIR, current.partner.image));
     }
+    const ebook = req.files?.ebook?.[0];
+    if (ebook) {
+      next_.partner.ebookFile = storeFile(ebook).file;
+      rm(current.partner.ebookFile && path.join(FILE_DIR, current.partner.ebookFile));
+    } else if (req.body.removeEbook === '1' && current.partner.ebookFile) {
+      rm(path.join(FILE_DIR, current.partner.ebookFile));
+      next_.partner.ebookFile = null;
+    }
+
     const logo = req.files?.logo?.[0];
     if (logo) {
       next_.general.logo = await storeImage(logo.path, { maxWidth: 1400 });

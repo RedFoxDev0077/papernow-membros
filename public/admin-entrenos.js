@@ -216,39 +216,59 @@ window.EntreNosAdmin = (() => {
   function partnerForm() {
     const p = state.settings.partner, s = state.settings.sections.parceira;
     const inp = (v, max = 600) => h('input', { value: v || '', maxlength: max });
-    const area = (v) => { const t = h('textarea', { rows: 2, maxlength: 600 }); t.value = v || ''; return t; };
+    const area = (v, rows = 2, max = 600) => { const t = h('textarea', { rows, maxlength: max }); t.value = v || ''; return t; };
+    const link = (v, ph) => h('input', { type: 'url', value: v || '', placeholder: ph, maxlength: 2000 });
     const f = {
       active: h('input', { type: 'checkbox', style: 'width:auto;margin-right:8px', checked: p.active }),
       title: inp(s.title), subtitle: area(s.subtitle), menuLabel: inp(p.menuLabel, 40),
-      image: h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp' }),
-      cardTitle: inp(p.cardTitle), cardText: area(p.cardText),
-      primaryLabel: inp(p.primaryLabel, 80), primaryUrl: h('input', { type: 'url', value: p.primaryUrl || '', placeholder: 'https://… (link de afiliada)', maxlength: 2000 }),
-      storeText: inp(p.storeText), storeUrl: h('input', { type: 'url', value: p.storeUrl || '', placeholder: 'https://www.papernow.com.br/…', maxlength: 2000 }),
-      fullText: inp(p.fullText), coupon: inp(p.coupon, 40), fullUrl: h('input', { type: 'url', value: p.fullUrl || '', placeholder: 'https://… (link de afiliada)', maxlength: 2000 }),
-      microtext: inp(p.microtext),
+      image: h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp' }), photoBadge: inp(p.photoBadge, 80),
+      cardTitle: inp(p.cardTitle), cardText: area(p.cardText, 7, 2000), benefitsTitle: inp(p.benefitsTitle, 80),
+      primaryLabel: inp(p.primaryLabel, 80), primaryUrl: link(p.primaryUrl, 'https://… (link de afiliada)'), primaryNote: inp(p.primaryNote),
+      storeBold: inp(p.storeBold), storeText: inp(p.storeText), storeUrl: link(p.storeUrl, 'https://www.papernow.com.br/…'),
+      fullBold: inp(p.fullBold), fullText: inp(p.fullText), coupon: inp(p.coupon, 40), fullUrl: link(p.fullUrl, 'https://… (link de afiliada)'),
+      ebookTitle: inp(p.ebookTitle), ebookText: area(p.ebookText), ebookLabel: inp(p.ebookLabel, 40), ebookLabelMobile: inp(p.ebookLabelMobile, 40),
+      ebook: h('input', { type: 'file', accept: 'application/pdf,.pdf' }),
     };
+    const ben = [1, 2, 3].map((i) => ({ i, title: inp(p[`benefit${i}Title`], 80), text: inp(p[`benefit${i}Text`]) }));
+    const TEXT_KEYS = ['menuLabel', 'photoBadge', 'cardTitle', 'cardText', 'benefitsTitle', 'primaryLabel', 'primaryUrl', 'primaryNote', 'storeBold', 'storeText', 'storeUrl', 'fullBold', 'fullText', 'coupon', 'fullUrl', 'ebookTitle', 'ebookText', 'ebookLabel', 'ebookLabelMobile'];
+    let removeEbook = false;
     const msg = h('div', { class: 'msg' });
     const btn = h('button', { text: 'Salvar parceira em destaque' });
-    btn.onclick = () => saveSettings({
-      sections: { parceira: { title: f.title.value, subtitle: f.subtitle.value } },
-      partner: { active: f.active.checked, menuLabel: f.menuLabel.value, cardTitle: f.cardTitle.value, cardText: f.cardText.value, primaryLabel: f.primaryLabel.value, primaryUrl: f.primaryUrl.value, storeText: f.storeText.value, storeUrl: f.storeUrl.value, fullText: f.fullText.value, coupon: f.coupon.value, fullUrl: f.fullUrl.value, microtext: f.microtext.value },
-    }, { partnerImage: f.image.files[0] }, msg, btn);
+    btn.onclick = () => {
+      const partner = { active: f.active.checked };
+      for (const k of TEXT_KEYS) partner[k] = f[k].value;
+      for (const b of ben) { partner[`benefit${b.i}Title`] = b.title.value; partner[`benefit${b.i}Text`] = b.text.value; }
+      saveSettings({ sections: { parceira: { title: f.title.value, subtitle: f.subtitle.value } }, partner },
+        { partnerImage: f.image.files[0], ebook: f.ebook.files[0] }, msg, btn, { removeEbook: removeEbook && !f.ebook.files[0] });
+    };
 
     const linkHint = 'Abre em nova aba e é guardado exatamente como você colar — os parâmetros de rastreio não são alterados.';
     return h('div', { class: 'card' }, [
       h('div', { class: 'toprow' }, h('b', { text: 'Parceira em destaque' })),
-      h('p', { class: 'hint', text: 'Uma parceira por vez, com acesso liberado. Quando a parceira mudar, troque os textos, a foto e os links aqui.' }),
+      h('p', { class: 'hint', text: 'Uma parceira por vez, com acesso liberado. Quando a parceira mudar, troque os textos, a foto, os links e o ebook aqui.' }),
       h('label', { style: 'display:flex;align-items:center;font-size:14px;color:var(--ink)' }, [f.active, 'Mostrar esta seção na página']),
       h('div', { class: 'row' }, [field('Título da seção', f.title), field('Nome no menu', f.menuLabel)]),
       field('Subtítulo da seção', f.subtitle),
-      field('Foto do topo do card', f.image, '1600 × 900 px (16:9, deitada). No computador a foto aparece mais baixa (corta em cima e embaixo), então deixe o assunto principal no centro.'),
+      field('Foto do card', f.image, '1800 × 1500 px (proporção 6:5). A foto é centralizada a 70% na horizontal; deixe o assunto principal nessa região. JPG, PNG ou WEBP.'),
       p.image ? h('img', { class: 'preview', src: `/entrenos-media/${p.image}`, alt: '' }) : h('p', { class: 'hint', text: 'Ainda sem foto — a página mostra um bloco neutro no lugar.' }),
+      field('Selo sobre a foto', f.photoBadge, 'Vazio = sem selo.'),
       field('Título do card', f.cardTitle),
-      field('Texto do card', f.cardText),
-      h('fieldset', {}, [h('legend', { text: 'Ação 1 — botão principal' }), field('Texto do botão', f.primaryLabel), field('Link', f.primaryUrl, linkHint)]),
-      h('fieldset', {}, [h('legend', { text: 'Ação 2 — quem ainda não tem o Master Planner' }), field('Texto', f.storeText), field('Link da loja', f.storeUrl)]),
-      h('fieldset', {}, [h('legend', { text: 'Ação 3 — acesso completo com cupom' }), field('Texto', f.fullText, 'Escreva {cupom} onde o cupom deve aparecer em destaque.'), field('Cupom', f.coupon), field('Link', f.fullUrl, linkHint)]),
-      field('Microtexto no fim do card', f.microtext),
+      field('Texto do card', f.cardText, 'Deixe uma linha em branco entre os parágrafos.'),
+      h('fieldset', {}, [
+        h('legend', { text: 'Benefícios' }), field('Título da lista', f.benefitsTitle),
+        ...ben.map((b) => h('div', { class: 'row' }, [field(`Benefício ${b.i} (negrito)`, b.title), field('Texto', b.text)])),
+      ]),
+      h('fieldset', {}, [h('legend', { text: 'Ação 1 — botão principal' }), field('Texto do botão', f.primaryLabel), field('Link', f.primaryUrl, linkHint), field('Legenda abaixo do botão', f.primaryNote)]),
+      h('fieldset', {}, [h('legend', { text: 'Ação 2 — quem ainda não tem o Master Planner' }), field('Texto em negrito', f.storeBold), field('Continuação', f.storeText), field('Link da loja', f.storeUrl)]),
+      h('fieldset', {}, [h('legend', { text: 'Ação 3 — acesso completo com cupom' }), field('Texto em negrito', f.fullBold), field('Continuação', f.fullText, 'Escreva {cupom} onde o cupom deve aparecer em destaque.'), field('Cupom', f.coupon), field('Link', f.fullUrl, linkHint)]),
+      h('fieldset', {}, [
+        h('legend', { text: 'Ebook' }), field('Título', f.ebookTitle), field('Texto', f.ebookText),
+        h('div', { class: 'row' }, [field('Botão no computador', f.ebookLabel), field('Botão no celular', f.ebookLabelMobile)]),
+        field('Arquivo do ebook (PDF)', f.ebook, `Até ${state.maxFileMb}MB. O download fica aberto para qualquer pessoa que acessar a página.`),
+        p.ebookFile
+          ? h('p', { class: 'hint' }, [h('a', { href: '/api/entrenos/ebook', text: 'Baixar o ebook atual' }), ' · ', h('a', { href: '#', text: 'Remover', onclick: (e) => { e.preventDefault(); removeEbook = true; e.target.textContent = 'Será removido ao salvar'; } })])
+          : h('p', { class: 'hint', text: 'Ainda sem arquivo — o botão aparece na página mas ainda não baixa.' }),
+      ]),
       h('p', { class: 'hint', text: 'Enquanto um link estiver vazio, a ação aparece na página mas ainda não clica.' }),
       msg, btn,
     ]);

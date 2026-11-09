@@ -16,6 +16,10 @@ const ICON = {
   lock: '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 6.6-1.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
   bag: '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M5.5 8h13l-1 12h-11zM9 8V7a3 3 0 0 1 6 0v1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>',
   tag: '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M4 4h7l9 9-7 7-9-9zM8 8h.01" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  unlock: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 6.7-1.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  cal: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  tag20: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 4h7l9 9-7 7-9-9zM8 8h.01" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  book: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="4" y="5" width="7.5" height="14" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="12.5" y="5" width="7.5" height="14" rx="1.2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
   copy: '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>',
   phone: '<svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M11 18h2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
   wa: '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3.5a8.5 8.5 0 0 0-7.3 12.8L3.5 20.5l4.3-1.1A8.5 8.5 0 1 0 12 3.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.4 8.3l-1.2 1c.4 3 2.5 5.1 5.5 5.5l1-1.2-1.8-1.1-.8.6c-.9-.4-1.5-1-1.9-1.9l.6-.8z" fill="currentColor"/></svg>',
@@ -83,20 +87,40 @@ function secParceira(n, s, p) {
     ? `<a class="act ${cls}" ${extAttrs(url)}>${inner}</a>`
     : `<span class="act ${cls} soon" aria-disabled="true" title="Link em breve">${inner}</span>`);
   const fullText = esc(p.fullText).replace('{cupom}', p.coupon ? `<b class="cupom">${esc(p.coupon)}</b>` : '');
+  const paragraphs = String(p.cardText || '').split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean);
+  const benefits = [[ICON.unlock, p.benefit1Title, p.benefit1Text], [ICON.cal, p.benefit2Title, p.benefit2Text], [ICON.tag20, p.benefit3Title, p.benefit3Text]]
+    .filter(([, title, body]) => title || body);
+  const ebookInner = `${ICON.down}<span class="only-d">${esc(p.ebookLabel)}</span><span class="only-m">${esc(p.ebookLabelMobile || p.ebookLabel)}</span>`;
   return `<section class="sec" id="parceira" aria-labelledby="parceira-t">
     ${sectionHead(n, s, 'parceira')}
     <article class="partner">
-      <div class="partner-img">${p.image ? `<img src="/entrenos-media/${esc(p.image)}" alt="${esc(s.title)}" loading="lazy" decoding="async">` : placeholder()}</div>
+      <div class="partner-img">
+        ${p.image ? `<img src="/entrenos-media/${esc(p.image)}" alt="${esc(p.photoBadge || s.title)}" loading="lazy" decoding="async">` : placeholder()}
+        ${p.photoBadge ? `<span class="partner-badge">${esc(p.photoBadge)}</span>` : ''}
+      </div>
       <div class="partner-b">
         <h3>${esc(p.cardTitle)}</h3>
-        <p>${esc(p.cardText)}</p>
+        ${paragraphs.map((t) => `<p>${esc(t)}</p>`).join('')}
+        ${benefits.length ? `<h4 class="ben-t">${esc(p.benefitsTitle)}</h4>
+        <ul class="ben">${benefits.map(([icon, title, body]) => `
+          <li>${icon}<div><b>${esc(title)}<i>.</i></b> <span>${esc(body)}</span></div></li>`).join('')}
+        </ul>` : ''}
         <div class="acts">
-          ${action(p.primaryUrl, 'act-1', `${ICON.lock}<span>${esc(p.primaryLabel)}</span>${ICON.arrow}`)}
-          ${action(p.storeUrl, 'act-2', `${ICON.bag}<span>${esc(p.storeText)}</span>${ICON.arrow}`)}
-          ${action(p.fullUrl, 'act-3', `${ICON.tag}<span>${fullText}</span>${ICON.ext}`)}
+          <div>
+            ${action(p.primaryUrl, 'act-1', `<span>${esc(p.primaryLabel)}</span>${ICON.arrow}`)}
+            ${p.primaryNote ? `<p class="micro act-note">${esc(p.primaryNote)}</p>` : ''}
+          </div>
+          ${action(p.storeUrl, 'act-2', `<span><b>${esc(p.storeBold)}</b> <em>${esc(p.storeText)}</em></span>${ICON.arrow}`)}
+          ${action(p.fullUrl, 'act-3', `<span><b>${esc(p.fullBold)}</b> <em>${fullText}</em></span>${ICON.ext}`)}
         </div>
-        ${p.microtext ? `<p class="micro">${esc(p.microtext)}</p>` : ''}
       </div>
+      <aside class="ebook" aria-label="${esc(p.ebookTitle)}">
+        <div class="ebook-ico">${ICON.book}</div>
+        <div class="ebook-t"><h4>${esc(p.ebookTitle)}</h4><p>${esc(p.ebookText)}</p></div>
+        ${p.ebookFile
+    ? `<a class="ebook-btn" href="/api/entrenos/ebook" download>${ebookInner}</a>`
+    : `<span class="ebook-btn soon" aria-disabled="true" title="Ebook em breve">${ebookInner}</span>`}
+      </aside>
     </article>
   </section>`;
 }
@@ -220,7 +244,7 @@ export function renderEntreNos() {
 <meta name="apple-mobile-web-app-title" content="Entre Nós">
 <link rel="preload" href="/fonts/lora-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/montserrat-var.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/entrenos/entrenos.css?v=1">
+<link rel="stylesheet" href="/entrenos/entrenos.css?v=2">
 </head>
 <body>
 <a class="skip" href="#inicio">Pular para o conteúdo</a>

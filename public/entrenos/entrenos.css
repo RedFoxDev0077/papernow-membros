@@ -1,6 +1,7 @@
 /* Entre Nós · Papernow — página pública */
 @font-face { font-family: 'Lora'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('/fonts/lora-var.woff2') format('woff2'); }
 @font-face { font-family: 'Lora'; font-style: italic; font-weight: 400 700; font-display: swap; src: url('/fonts/lora-italic.woff2') format('woff2'); }
+@font-face { font-family: 'Josefin Sans'; font-style: normal; font-weight: 300 500; font-display: swap; src: url('/fonts/josefin-var.woff2') format('woff2'); }
 @font-face { font-family: 'Montserrat'; font-style: normal; font-weight: 400 700; font-display: swap; src: url('/fonts/montserrat-var.woff2') format('woff2'); }
 
 :root {
@@ -37,11 +38,12 @@ button { font: inherit; cursor: pointer; }
 /* ---- Topo: faixa única e compacta ---- */
 .top { background: var(--faixa-logo); display: flex; justify-content: center; padding: 18px 16px; }
 .logo { display: block; text-decoration: none; color: var(--branco); }
-.logo-art { height: 84px; width: auto; }
-.logo-txt { display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; }
-.logo-txt b { font-weight: 600; font-size: 30px; letter-spacing: 3px; line-height: 1; }
-.logo-txt em { font-family: var(--serif); font-style: normal; font-weight: 600; font-size: 12px; letter-spacing: .2px; }
-.logo-txt img { height: 15px; width: auto; margin-top: 3px; }
+.logo-art { display: block; width: auto; height: auto; max-height: 104px; max-width: 100%; }
+.logo-svg { display: block; height: 104px; width: auto; max-width: 100%; overflow: visible; }
+.logo-svg text { fill: var(--branco); }
+.logo-svg .l1 { font-family: 'Josefin Sans', var(--sans); font-weight: 400; font-size: 63px; }
+.logo-svg .l2 { font-family: var(--serif); font-weight: 700; font-size: 17.5px; }
+.logo-svg .l3 { stroke: var(--branco); stroke-opacity: .55; stroke-width: 1.5; }
 
 /* ---- Menu ---- */
 .menu { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--fundo) 94%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--neutro-1); }
@@ -63,7 +65,6 @@ main { max-width: var(--largura); margin: 0 auto; padding: 8px 16px 40px; }
 a.sec-m { color: var(--cor-acao); font-weight: 600; }
 .sec-s { max-width: 640px; margin-top: 10px; color: var(--tinta-suave); font-size: 14.5px; }
 .sec-h { margin-bottom: 24px; }
-.sub-h { font-family: var(--serif); font-weight: 500; font-size: 19px; margin: 30px 0 14px; }
 .muted { color: var(--tinta-suave); font-size: 13px; }
 .micro { color: var(--tinta-suave); font-size: 12px; }
 
@@ -76,7 +77,7 @@ a.link:hover, .card-a:hover .link { text-decoration: underline; text-underline-o
 
 /* ---- Imagens / placeholders ---- */
 .card-img { position: relative; display: block; overflow: hidden; background: var(--neutro-1); }
-.card-img img, .feature-img img, .partner-img img { width: 100%; height: 100%; object-fit: cover; }
+.card-img img, .partner-img img { width: 100%; height: 100%; object-fit: cover; }
 .r43 { aspect-ratio: 4 / 3; }
 .r169 { aspect-ratio: 16 / 9; }
 .r11 { aspect-ratio: 1 / 1; }
@@ -84,16 +85,11 @@ a.link:hover, .card-a:hover .link { text-decoration: underline; text-underline-o
 .play { position: absolute; inset: 0; margin: auto; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: color-mix(in srgb, var(--branco) 88%, transparent); color: var(--cor-acao); padding-left: 3px; transition: transform .15s; }
 a:hover > .card-img .play, a:hover > .play, .card-img:hover .play { transform: scale(1.08); }
 
-/* ---- 01 Conteúdo em destaque ---- */
-.feature { display: grid; grid-template-columns: 1.15fr 1fr; background: var(--branco); border: 1px solid var(--neutro-1); border-radius: var(--raio); overflow: hidden; }
-.feature-img { position: relative; display: block; aspect-ratio: 4 / 3; background: var(--neutro-2); }
-.feature-b { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 8px; padding: 28px 32px; }
-.feature-b h3 { font-family: var(--serif); font-weight: 500; font-size: clamp(21px, 3vw, 27px); line-height: 1.25; }
-.feature-b .btn { margin-top: 14px; }
 
 /* ---- Grades e cards ---- */
 .grid { display: grid; gap: 16px; }
 .g3 { grid-template-columns: repeat(3, 1fr); }
+.g4 { grid-template-columns: repeat(4, 1fr); }
 .g6 { grid-template-columns: repeat(6, 1fr); gap: 12px; }
 .card { display: flex; flex-direction: column; background: var(--branco); border: 1px solid var(--neutro-1); border-radius: var(--raio); overflow: hidden; color: inherit; text-decoration: none; }
 .card-a { transition: transform .15s, box-shadow .15s; }
@@ -218,20 +214,13 @@ a.ebook-btn:hover { filter: brightness(1.12); }
 /* ---- Celular ---- */
 @media (max-width: 760px) {
   .top { padding: 12px 16px; }
-  .logo-art { height: 60px; }
-  .logo-txt { gap: 3px; }
-  .logo-txt b { font-size: 22px; letter-spacing: 2.5px; }
-  .logo-txt em { font-size: 10.5px; }
-  .logo-txt img { height: 12px; margin-top: 2px; }
+  .logo-art { max-height: 76px; }
+  .logo-svg { height: 76px; }
   .menu-in { justify-content: flex-start; padding: 10px 16px; }
   .sec { padding-top: 34px; }
   .sec-h { margin-bottom: 18px; }
   .sec-t { flex-wrap: wrap; row-gap: 4px; }
-  .feature { grid-template-columns: 1fr; }
-  .feature-img { aspect-ratio: 16 / 10; }
-  .feature-b { padding: 20px 20px 22px; }
-  .feature-b .btn { width: 100%; }
-  .g3 { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .g3, .g4 { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .g6 { grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .card-b { padding: 12px 13px 14px; }
   .card-b h4, .video h4 { font-size: 13.5px; }

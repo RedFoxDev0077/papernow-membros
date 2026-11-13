@@ -257,7 +257,7 @@ router.put('/settings', requireAdmin, settingsUpload, async (req, res, next) => 
     let input = {};
     try { input = JSON.parse(req.body.data || '{}'); } catch { /* ignora */ }
     const current = getSettings();
-    const URL_KEYS = new Set(['primaryUrl', 'storeUrl', 'fullUrl', 'whatsappUrl']);
+    const URL_KEYS = new Set(['primaryUrl', 'storeUrl', 'fullUrl', 'whatsappUrl', 'ebookUrl']);
     const FILE_KEYS = new Set(['image', 'logo', 'ebookFile']);
 
     // Só aceita chaves conhecidas (as do DEFAULTS); links passam intactos pelo cleanUrl.

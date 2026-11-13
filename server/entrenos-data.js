@@ -65,6 +65,7 @@ export const DEFAULTS = {
     ebookText: 'Material gratuito da Marília para dar os primeiros passos no método.',
     ebookLabel: 'Baixar',
     ebookLabelMobile: 'Baixar o ebook',
+    ebookUrl: 'https://organizacaosincera.rds.land/ebook-planner-2027',
     ebookFile: null,
   },
   general: {

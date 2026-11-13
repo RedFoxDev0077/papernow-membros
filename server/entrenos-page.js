@@ -56,20 +56,11 @@ function publishedLabel(item) {
   return Number.isNaN(d.getTime()) ? '' : `Publicado em ${MESES[d.getUTCMonth()]} de ${d.getUTCFullYear()}`;
 }
 
+// Todos os conteúdos com o mesmo destaque: grade de miniaturas, mais recente primeiro.
 function secConteudo(n, s, items) {
-  const [first, ...rest] = items;
   return `<section class="sec" id="conteudo" aria-labelledby="conteudo-t">
     ${sectionHead(n, s, 'conteudo')}
-    <article class="feature">
-      <a class="feature-img" ${openAttrs(first)} tabindex="-1" aria-hidden="true">${cover(first)}${first.embed || first.fileKind === 'video' ? `<span class="play">${ICON.play}</span>` : ''}</a>
-      <div class="feature-b">
-        <h3>${esc(first.title)}</h3>
-        <p class="muted">${publishedLabel(first)}</p>
-        <a class="btn" ${openAttrs(first)}>Ver conteúdo ${ICON.arrow}</a>
-      </div>
-    </article>
-    ${rest.length ? `<h3 class="sub-h">Conteúdos anteriores</h3>
-    <div class="grid g3">${rest.map((it) => `
+    <div class="grid g4">${items.map((it) => `
       <article class="card">
         <a class="card-img r43" ${openAttrs(it)} tabindex="-1" aria-hidden="true">${cover(it)}${it.embed || it.fileKind === 'video' ? `<span class="play">${ICON.play}</span>` : ''}</a>
         <div class="card-b">
@@ -78,7 +69,7 @@ function secConteudo(n, s, items) {
           <a class="link" ${openAttrs(it)}>Ver conteúdo ${ICON.arrow}</a>
         </div>
       </article>`).join('')}
-    </div>` : ''}
+    </div>
   </section>`;
 }
 
@@ -119,7 +110,9 @@ function secParceira(n, s, p) {
         <div class="ebook-t"><h4>${esc(p.ebookTitle)}</h4><p>${esc(p.ebookText)}</p></div>
         ${p.ebookFile
     ? `<a class="ebook-btn" href="/api/entrenos/ebook" download>${ebookInner}</a>`
-    : `<span class="ebook-btn soon" aria-disabled="true" title="Ebook em breve">${ebookInner}</span>`}
+    : p.ebookUrl
+      ? `<a class="ebook-btn" ${extAttrs(p.ebookUrl)}>${ebookInner}</a>`
+      : `<span class="ebook-btn soon" aria-disabled="true" title="Ebook em breve">${ebookInner}</span>`}
       </aside>
     </article>
   </section>`;
@@ -221,7 +214,12 @@ export function renderEntreNos() {
 
   const logo = g.logo
     ? `<img class="logo-art" src="/entrenos-media/${esc(g.logo)}" alt="Entre Nós — Papernow">`
-    : `<span class="logo-txt"><b>ENTRE NÓS</b><em>Conteúdo único, pensado só para você.</em><img src="/entrenos/papernow-white.png" alt="Papernow" width="472" height="54"></span>`;
+    : `<svg class="logo-svg" viewBox="0 0 416 153" role="img" aria-label="Entre Nós · Conteúdo único, pensado só para você · Papernow">
+        <text x="0" y="68" textLength="366" lengthAdjust="spacingAndGlyphs" class="l1">ENTRE NÓS</text>
+        <text x="1" y="101" textLength="365" lengthAdjust="spacingAndGlyphs" class="l2">Conteúdo único, pensado só para você.</text>
+        <image href="/entrenos/papernow-white.png" x="184" y="124" width="182" height="20.8"/>
+        <line x1="415" y1="0" x2="415" y2="153" class="l3"/>
+      </svg>`;
 
   const description = 'O espaço exclusivo de quem tem o Master Planner Papernow: conteúdos, downloads, benefícios e vídeos em um só lugar.';
 
@@ -244,7 +242,8 @@ export function renderEntreNos() {
 <meta name="apple-mobile-web-app-title" content="Entre Nós">
 <link rel="preload" href="/fonts/lora-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/montserrat-var.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/entrenos/entrenos.css?v=2">
+<link rel="preload" href="/fonts/josefin-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/entrenos/entrenos.css?v=3">
 </head>
 <body>
 <a class="skip" href="#inicio">Pular para o conteúdo</a>

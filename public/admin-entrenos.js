@@ -21,7 +21,7 @@ window.EntreNosAdmin = (() => {
       subtitle: 'Texto curto (opcional)', subtitlePh: 'Se ficar vazio, aparece "Publicado em <mês> de <ano>"',
       file: 'Arquivo do conteúdo (PDF ou vídeo MP4)', url: 'ou link do conteúdo (YouTube, site…)', fileFirst: true,
       image: 'Capa — 1200 × 900 px (4:3, deitada)',
-      note: 'O conteúdo mais recente entra em destaque no topo; os anteriores ficam logo abaixo.',
+      note: 'Todos os conteúdos aparecem em miniaturas do mesmo tamanho; o mais recente entra primeiro.',
     },
     downloads: {
       label: 'Downloads', one: 'material',
@@ -227,10 +227,11 @@ window.EntreNosAdmin = (() => {
       storeBold: inp(p.storeBold), storeText: inp(p.storeText), storeUrl: link(p.storeUrl, 'https://www.papernow.com.br/…'),
       fullBold: inp(p.fullBold), fullText: inp(p.fullText), coupon: inp(p.coupon, 40), fullUrl: link(p.fullUrl, 'https://… (link de afiliada)'),
       ebookTitle: inp(p.ebookTitle), ebookText: area(p.ebookText), ebookLabel: inp(p.ebookLabel, 40), ebookLabelMobile: inp(p.ebookLabelMobile, 40),
+      ebookUrl: link(p.ebookUrl, 'https://… (página do ebook)'),
       ebook: h('input', { type: 'file', accept: 'application/pdf,.pdf' }),
     };
     const ben = [1, 2, 3].map((i) => ({ i, title: inp(p[`benefit${i}Title`], 80), text: inp(p[`benefit${i}Text`]) }));
-    const TEXT_KEYS = ['menuLabel', 'photoBadge', 'cardTitle', 'cardText', 'benefitsTitle', 'primaryLabel', 'primaryUrl', 'primaryNote', 'storeBold', 'storeText', 'storeUrl', 'fullBold', 'fullText', 'coupon', 'fullUrl', 'ebookTitle', 'ebookText', 'ebookLabel', 'ebookLabelMobile'];
+    const TEXT_KEYS = ['menuLabel', 'photoBadge', 'cardTitle', 'cardText', 'benefitsTitle', 'primaryLabel', 'primaryUrl', 'primaryNote', 'storeBold', 'storeText', 'storeUrl', 'fullBold', 'fullText', 'coupon', 'fullUrl', 'ebookTitle', 'ebookText', 'ebookLabel', 'ebookLabelMobile', 'ebookUrl'];
     let removeEbook = false;
     const msg = h('div', { class: 'msg' });
     const btn = h('button', { text: 'Salvar parceira em destaque' });
@@ -264,10 +265,11 @@ window.EntreNosAdmin = (() => {
       h('fieldset', {}, [
         h('legend', { text: 'Ebook' }), field('Título', f.ebookTitle), field('Texto', f.ebookText),
         h('div', { class: 'row' }, [field('Botão no computador', f.ebookLabel), field('Botão no celular', f.ebookLabelMobile)]),
-        field('Arquivo do ebook (PDF)', f.ebook, `Até ${state.maxFileMb}MB. O download fica aberto para qualquer pessoa que acessar a página.`),
+        field('Link do ebook', f.ebookUrl, 'Página onde a pessoa baixa o ebook (abre em nova aba). Se você enviar um PDF abaixo, o botão passa a baixar o arquivo direto.'),
+        field('ou arquivo do ebook (PDF)', f.ebook, `Até ${state.maxFileMb}MB. O download fica aberto para qualquer pessoa que acessar a página.`),
         p.ebookFile
           ? h('p', { class: 'hint' }, [h('a', { href: '/api/entrenos/ebook', text: 'Baixar o ebook atual' }), ' · ', h('a', { href: '#', text: 'Remover', onclick: (e) => { e.preventDefault(); removeEbook = true; e.target.textContent = 'Será removido ao salvar'; } })])
-          : h('p', { class: 'hint', text: 'Ainda sem arquivo — o botão aparece na página mas ainda não baixa.' }),
+          : h('p', { class: 'hint', text: 'Sem arquivo enviado — o botão usa o link acima.' }),
       ]),
       h('p', { class: 'hint', text: 'Enquanto um link estiver vazio, a ação aparece na página mas ainda não clica.' }),
       msg, btn,
